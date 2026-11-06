@@ -1,0 +1,53 @@
+{
+  "paths": 2000,
+  "batch_size": 1000,
+  "steps": 512,
+  "seed": 20260907,
+  "maturity": 0.25,
+  "strike": 1.0,
+  "cutoff": 80.0,
+  "kappas": [
+    0.0,
+    0.0001,
+    0.0005,
+    0.001
+  ],
+  "gkw_capital": 0.01949096299956765,
+  "gkw_r160_capital": 0.01958211646123531,
+  "bs_implied_vol": 0.09772291819779826,
+  "variance_thresholds": {
+    "0.5": 0.003348061250787626,
+    "0.75": 0.01216462183343284
+  },
+  "proxy_window_steps": 32,
+  "payoff_mean": 0.02052584204780173,
+  "total_jumps": 9,
+  "rules": [
+    "fixed/every=1",
+    "fixed/every=2",
+    "fixed/every=4",
+    "fixed/every=8",
+    "fixed/every=16",
+    "fixed/every=32",
+    "fixed/every=64",
+    "fixed/every=128",
+    "fixed/every=256",
+    "fixed/every=512",
+    "variance/calm=16,stress=4,thr=0.003348",
+    "variance/calm=32,stress=8,thr=0.003348",
+    "variance/calm=64,stress=16,thr=0.003348",
+    "variance/calm=128,stress=32,thr=0.003348",
+    "variance/calm=16,stress=4,thr=0.01216",
+    "variance/calm=32,stress=8,thr=0.01216",
+    "variance/calm=64,stress=16,thr=0.01216",
+    "variance/calm=128,stress=32,thr=0.01216",
+    "band/half_width=0.005",
+    "band/half_width=0.01",
+    "band/half_width=0.02",
+    "band/half_width=0.05",
+    "band/half_width=0.1",
+    "band/half_width=0.2"
+  ],
+  "runtime_seconds": 26.39173460006714,
+  "cost_convention": "kappa * notional; initial purchase and terminal liquidation included"
+}

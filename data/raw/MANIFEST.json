@@ -1,0 +1,208 @@
+{
+  "files": [
+    {
+      "file": "data/raw/yahoo/nsei_20261022.json",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=1167609600&period2=1792668554&interval=1d&events=div%2Csplit",
+      "retrieved_utc": "2026-10-22T11:29:15+00:00",
+      "sha256": "5c04b3e15af6b863b3341f1f1ff0f1e36dee1ef1fd6f7c72afd3ab0629f56007",
+      "bytes": 420358,
+      "note": "Yahoo chart API, daily"
+    },
+    {
+      "file": "data/raw/yahoo/indiavix_20261022.json",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EINDIAVIX?period1=1167609600&period2=1792668554&interval=1d&events=div%2Csplit",
+      "retrieved_utc": "2026-10-22T11:29:19+00:00",
+      "sha256": "fa82cdb005b92b878615dc7af240078f30d788fa5f0287ca03d5e8cd3d650bfb",
+      "bytes": 476192,
+      "note": "Yahoo chart API, daily"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20070901_20080830.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:20+00:00",
+      "sha256": "ba1ec486728570d3624746813b99cebd4b7c1c9f4eac343428aa628eda1f2129",
+      "bytes": 45568,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'01-Sep-2007','endDate':'30-Aug-2008','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20080831_20090830.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:22+00:00",
+      "sha256": "6aeb8841a9b7bd950768cd82b98b751b5461b6b334bda41c97bd45cb1ada9778",
+      "bytes": 44104,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'31-Aug-2008','endDate':'30-Aug-2009','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20090831_20100830.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:23+00:00",
+      "sha256": "177184cef38ed79f371934087dddf991ebb5d059703c02464433e23a7ba5ffe5",
+      "bytes": 45385,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'31-Aug-2009','endDate':'30-Aug-2010','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20100831_20110830.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:26+00:00",
+      "sha256": "6a40fd7d878b20cc2f4a678e99c949cb6e93e50b8d4e04d9bc31cfeef5f966c5",
+      "bytes": 46117,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'31-Aug-2010','endDate':'30-Aug-2011','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20110831_20120829.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:28+00:00",
+      "sha256": "2e0936cabaa9ffb10ad2209e9ec7372e527c5feb4f7ea1a6c62a728d2264d7dc",
+      "bytes": 45568,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'31-Aug-2011','endDate':'29-Aug-2012','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20120830_20130829.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:29+00:00",
+      "sha256": "0a4c429e2d11e620e2a81bdf9fc1e13b2597495eef3b5016f680449970da22c6",
+      "bytes": 45751,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'30-Aug-2012','endDate':'29-Aug-2013','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20130830_20140829.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:31+00:00",
+      "sha256": "2243c17bbef1c07238844d2960cd0aef24de3a6176e9c36d62ce0717fd1d7344",
+      "bytes": 45202,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'30-Aug-2013','endDate':'29-Aug-2014','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20140830_20150829.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:33+00:00",
+      "sha256": "4288afc6fb202a20e0999c8fb35bd24b1e8433fc0741e1cb20bceca515914ce5",
+      "bytes": 45019,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'30-Aug-2014','endDate':'29-Aug-2015','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20150830_20160828.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:34+00:00",
+      "sha256": "caabd005bde0b0ceb47761af2d38c3d23149cd74eb37de8d03fe2f4a44a62742",
+      "bytes": 44653,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'30-Aug-2015','endDate':'28-Aug-2016','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20160829_20170828.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:36+00:00",
+      "sha256": "2b63965fcb3289ce7135052efc7e72eb43284fc35fd7552f01b0ddfc7f5dd9f8",
+      "bytes": 45236,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'29-Aug-2016','endDate':'28-Aug-2017','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20170829_20180828.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:38+00:00",
+      "sha256": "228e9b21a4731bef2e2049886d3dfc330e8b06b1259a5a4f8f1e606c98fadde6",
+      "bytes": 46664,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'29-Aug-2017','endDate':'28-Aug-2018','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20180829_20190828.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:39+00:00",
+      "sha256": "bdfca713f9cf373b27c4f8af4cb01c5ddc24d1c78c3434dcf71379be5e8cceba",
+      "bytes": 45816,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'29-Aug-2018','endDate':'28-Aug-2019','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20190829_20200827.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:41+00:00",
+      "sha256": "319113539df0243486d218e8245a7f97eaa10802227a99195fac7121f59f9698",
+      "bytes": 45963,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'29-Aug-2019','endDate':'27-Aug-2020','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20200828_20210827.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:42+00:00",
+      "sha256": "75b5c4a728d00395aab70d2cee2560d2c651c3e83118999c5c85d10181092efe",
+      "bytes": 46564,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'28-Aug-2020','endDate':'27-Aug-2021','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20210828_20220827.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:44+00:00",
+      "sha256": "ba6c138bed541790d89258142052b39bff55c11072196c86a1b73f37cbfa0bd7",
+      "bytes": 46377,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'28-Aug-2021','endDate':'27-Aug-2022','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20220828_20230827.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:45+00:00",
+      "sha256": "4aa93cfb3b90b99c38be9f0e00acb811880d65f576de3a7d30214a405cea01d3",
+      "bytes": 46190,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'28-Aug-2022','endDate':'27-Aug-2023','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20230828_20240826.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:47+00:00",
+      "sha256": "4ebb7ade177059d74dc5b81898404cff15580184c6e58fbb51bea49e4c1d8702",
+      "bytes": 46032,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'28-Aug-2023','endDate':'26-Aug-2024','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20240827_20250826.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:49+00:00",
+      "sha256": "d42ab3cdbe2bd5b0d2d24495a05d658cfe49d00f76ea4d02a64fe5a9cfcc09fd",
+      "bytes": 46309,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'27-Aug-2024','endDate':'26-Aug-2025','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20250827_20260826.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:50+00:00",
+      "sha256": "bfa9fe99c1f343cc4c0558d62b81596e935aa3578a468058676e776b66b0cd8e",
+      "bytes": 45729,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'27-Aug-2025','endDate':'26-Aug-2026','indexName':'NIFTY 50'}"
+    },
+    {
+      "file": "data/raw/niftyindices/nifty50_20260827_20261021.json",
+      "url": "https://www.niftyindices.com/BackPage/getHistoricaldatatabletoString",
+      "retrieved_utc": "2026-10-22T11:29:51+00:00",
+      "sha256": "71dd70b2d6beb571d09104a3239d5477bc078540741215b28c0b30ce4e4b150c",
+      "bytes": 6849,
+      "note": "POST cinfo={'name':'NIFTY 50','startDate':'27-Aug-2026','endDate':'21-Oct-2026','indexName':'NIFTY 50'}"
+    }
+  ],
+  "retrieval_utc": "2026-10-22T11:29:14+00:00",
+  "processed": {
+    "nifty50_yahoo": {
+      "rows_raw": 4716,
+      "symbol": "^NSEI",
+      "rows_missing_close": 32,
+      "rows_dropped_not_final": 1,
+      "duplicate_dates": 0,
+      "first": "2007-09-17",
+      "last": "2026-10-19",
+      "rows": 4683
+    },
+    "indiavix_yahoo": {
+      "rows_raw": 4600,
+      "symbol": "^INDIAVIX",
+      "rows_missing_close": 35,
+      "rows_dropped_not_final": 1,
+      "duplicate_dates": 0,
+      "first": "2008-03-03",
+      "last": "2026-10-19",
+      "rows": 4564
+    },
+    "nifty50_niftyindices": {
+      "rows": 4740,
+      "first": "2007-09-03",
+      "last": "2026-10-21"
+    }
+  }
+}

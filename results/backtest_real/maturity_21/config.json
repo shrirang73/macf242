@@ -1,0 +1,28 @@
+{
+  "maturity_days": 21,
+  "labels": [
+    "vix_hyst",
+    "vix_q75",
+    "rv21_q75",
+    "ms_filter"
+  ],
+  "labels_csv": "D:\\scafproject\\results\\regimes\\regime_labels.csv",
+  "year_days": 252,
+  "placebo_lag": 252,
+  "periods": {
+    "train": {
+      "options": 2076,
+      "first_start": "2010-07-20",
+      "last_start": "2018-11-29",
+      "mean_premium": 0.020514901168464775,
+      "mean_payoff": 0.022155990782547926
+    },
+    "test": {
+      "options": 1914,
+      "first_start": "2019-01-01",
+      "last_start": "2026-09-18",
+      "mean_premium": 0.01970636102091693,
+      "mean_payoff": 0.02279758741224497
+    }
+  }
+}

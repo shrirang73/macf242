@@ -1,0 +1,81 @@
+\documentclass[10pt,leqno]{amsart}
+\usepackage{graphicx}
+\baselineskip=16pt
+
+\usepackage{indentfirst,csquotes}
+
+\topmargin= .5cm
+\textheight= 22.5cm
+\textwidth= 32cc
+\baselineskip=16pt
+
+\evensidemargin= .9cm
+\oddsidemargin= .9cm
+
+\usepackage{amssymb,amsthm,amsmath}
+\usepackage{xcolor,paralist,hyperref,titlesec,fancyhdr,etoolbox}
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\titleformat{\section}[display]{\normalfont\huge\bfseries\centering}{\centering\chaptertitlename\thechapter}{10pt}{\Large}
+\titlespacing*{\section}{0pt}{0ex}{0ex}
+
+\hypersetup{ colorlinks=true, linkcolor=black, filecolor=black, urlcolor=black }
+\def\proof{\noindent {\it Proof. $\, $}}
+\def\endproof{\hfill $\Box$ \vskip 5 pt }
+
+\begin{document}
+\title{Variance-Optimal Hedging under Rough Volatility and Jumps}
+\author{MAC F244: Stochastic Calculus and Applications to Finance \\ Project Proposal}
+\date{31 October 2026}
+\maketitle
+\vspace{-1.5em}
+
+\let\thefootnote\relax
+\footnotetext{MSC2020: Primary 91G20, Secondary 60H30.}
+
+\bigskip
+
+\noindent\textbf{Problem description.}\par
+\noindent Classical hedging theory assumes continuous, costless rebalancing and simple asset dynamics. In real markets trading is discrete and costly, volatility is random and can be rough, prices jump, and conditions alternate between calm and stressed periods. This project studies how option hedges derived from stochastic models perform once these features are taken into account, and how the hedging strategy should be adapted to them.
+
+\medskip
+
+\noindent\textbf{Mathematical model.}\par
+\noindent The asset price $S$ is modelled by a jump-diffusion with stochastic variance $V$,
+\[
+\frac{dS_t}{S_{t-}} = \sqrt{V_t}\,dW_t + dJ_t ,
+\]
+where $W$ is a Brownian motion, $J$ is a compensated jump process, and $V$ may follow stochastic, rough or self-exciting dynamics. In this incomplete market an option payoff $H$ cannot be replicated exactly, and we study the variance-optimal hedge $\vartheta^*$ from the decomposition
+\[
+H = \mathbb{E}^{\mathbb{Q}}[H] + \int_0^T \vartheta^*_t \, dS_t + L_T ,
+\]
+where $L_T$ is the residual risk that cannot be hedged. The analysis uses It\^o calculus for jump processes, stochastic volatility models and risk-neutral pricing.
+
+\medskip
+
+\noindent\textbf{Computational methodology.}\par
+\noindent We will implement the model and its hedge in Python, first reproducing known numerical results for the continuous-time case. We will then use Monte Carlo simulation to study the hedge when trading is discrete and costly, comparing different rebalancing rules, including rules that respond to market conditions. Finally, we will evaluate the strategies on historical Indian market data, such as the NIFTY~50 index and its options, against standard benchmarks such as the Black--Scholes delta.
+
+\medskip
+
+\noindent\textbf{Expected outcomes.}\par
+\noindent A working implementation of the model and its hedging strategies; a comparison of strategies in terms of hedging error and trading cost, in simulation and on real data; and an interpretation of the results through the underlying stochastic calculus. The precise model, rebalancing rules and datasets may be refined as the project develops.
+
+\medskip
+
+% Group members. members.tex (with student IDs) is kept out of the public
+% repository (see .gitignore); without it, the names-only list is used.
+% Public builds define \PublicBuild to force the names-only list.
+\ifdefined\PublicBuild
+\input{members_public}
+\else
+\IfFileExists{members.tex}{\input{members}}{\input{members_public}}
+\fi
+
+\end{document}

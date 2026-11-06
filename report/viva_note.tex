@@ -1,0 +1,354 @@
+\documentclass[10pt,leqno]{amsart}
+\usepackage{graphicx}
+\baselineskip=16pt
+
+\usepackage{indentfirst,csquotes}
+
+\topmargin= .5cm
+\textheight= 22.5cm
+\textwidth= 32cc
+\baselineskip=16pt
+
+\evensidemargin= .9cm
+\oddsidemargin= .9cm
+
+\usepackage{amssymb,amsthm,amsmath}
+\usepackage{xcolor,paralist,hyperref,titlesec,fancyhdr,etoolbox}
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\titleformat{\section}[display]{\normalfont\huge\bfseries\centering}{\centering\chaptertitlename\thechapter}{10pt}{\Large}
+\titlespacing*{\section}{0pt}{0ex}{0ex}
+
+\hypersetup{ colorlinks=true, linkcolor=black, filecolor=black, urlcolor=black }
+\def\proof{\noindent {\it Proof. $\, $}}
+\def\endproof{\hfill $\Box$ \vskip 5 pt }
+
+% --- Additions (same as report.tex) -----------------------------------------
+\usepackage{booktabs}
+\newcommand{\heading}[1]{\medskip\noindent\textbf{#1}\par}
+\newcommand{\qa}[2]{\smallskip\noindent\textbf{Q.} \emph{#1}\par\noindent\textbf{A.} #2\par}
+\input{numbers}  % every number comes from src/report_assets.py
+% -----------------------------------------------------------------------------
+
+\begin{document}
+\title{Viva Note: Variance-Optimal Hedging under Rough Volatility and Jumps}
+\author{MAC F244 project team \\ Internal study note (not for submission)}
+\date{\today}
+\maketitle
+\vspace{-1em}
+
+\noindent This note explains, in plain language, what we did and why (main
+reference: Shreve, \emph{Stochastic Calculus for Finance II}, Ch.~4--6 and 11).
+Sections 2--4 are the mathematics to know; Section 5
+describes the simulation model at the level needed; Section 6 gives our
+results; Section 8 prepares for questions. Every number is generated from our
+result files, so it matches the report.
+
+\heading{1. The question in one paragraph.}
+\noindent You sell a call option and want to remove its risk by trading the
+underlying. In Black--Scholes this works perfectly if you rebalance
+continuously and for free. Real hedgers trade at most a few times a day, pay
+costs, and face markets that switch between calm and stress. We ask how often
+to rebalance, whether to trade more in stress, and how much a better hedge
+ratio helps. We test this in simulation, under a realistic model from Wang and
+Wang's paper using their code, and on NIFTY data with synthetic and traded
+options.
+
+\heading{2. Black--Scholes delta hedging.}
+\noindent Under $\mathbb{Q}$ with zero rate, $dS=\sigma S\,dW$. For the call price
+$C(t,S)$, It\^o's formula gives
+\[
+dC=\big(C_t+\tfrac12\sigma^2S^2C_{SS}\big)\,dt+C_S\,dS .
+\]
+The Black--Scholes--Merton PDE says the bracket is zero, so $dC=C_S\,dS$:
+holding $\Delta=C_S$ shares replicates the call. Equivalently, by the
+martingale representation theorem, every $\mathbb{Q}$-martingale (here the
+option price) is a constant plus a stochastic integral against the Brownian
+motion, and hence against $S$. One source of risk and one traded asset: the market is complete.
+
+\heading{3. What changes in practice (derivations to know).}
+\noindent\emph{(a) Discrete rebalancing.} Hold $\Delta_k$ shares over an interval
+of length $h$, during which the stock returns $R_k=\Delta S/S$. The short call's
+P\&L is $\Delta_k\,\Delta S-\Delta C$. Expand
+$\Delta C\approx C_t\,h+C_S\,\Delta S+\frac12\Gamma\,\Delta S^2$, with
+$\Gamma=C_{SS}$, and use $C_t=-\frac12\sigma^2S^2\Gamma$ from the PDE:
+\[
+\varepsilon_k\approx\tfrac12\Gamma_kS_k^2\big(\sigma^2h-R_k^2\big).
+\]
+Since $\mathbb{E}[R_k^2]\approx\sigma^2h$, the mean is about zero. Since
+$\mathrm{Var}(R_k^2)\approx2\sigma^4h^2$,
+\[
+\mathrm{Var}(\varepsilon_k)\approx\tfrac12\Gamma_k^2S_k^4\sigma^4h^2 .
+\]
+Errors in different intervals are uncorrelated (martingale differences), so
+over the $T/h$ intervals the extra variance is of order $h$: halving the
+interval roughly halves it. Our test suite checks this in a Black--Scholes
+simulation.
+
+\noindent\emph{(b) Gamma P\&L.} If the delta is computed at an implied
+volatility $\sigma_i$ but the stock moves with realised volatility $\sigma_r$,
+then $\mathbb{E}[R_k^2]\approx\sigma_r^2h$, and the expected P\&L per interval is
+\[
+\tfrac12\,\Gamma S^2\big(\sigma_i^2-\sigma_r^2\big)\,h .
+\]
+The seller gains when implied volatility exceeds the volatility that follows.
+\emph{Our check (test period 2019--2026):}
+\begin{compactitem}
+\item India VIX was above the next month's realised volatility on \IvrVixAbove\%
+of days (mean \IvrVixMean\% against \IvrVixRvMean\%).
+\item Traded options' implied vol was above realised vol over their life for
+\IvrOptAbove\% of options (mean \IvrOptIvMean\% against \IvrOptRvMean\%).
+\item In variance terms (what the formula uses), implied exceeded realised by a
+factor \IvrVixVarRatioEx{} (VIX) and \IvrOptVarRatioEx{} (options) outside the
+COVID window. The crash reversed it (\IvrVixVarRatioCovid{} and
+\IvrOptVarRatioCovid).
+\end{compactitem}
+
+\noindent\emph{(c) Costs.} Each trade costs $\kappa$ times the notional traded.
+Trading more often reduces the error in (a) but raises costs: a trade-off. With
+NIFTY's costs (up to 20\,bp), daily rebalancing still wins.
+
+\heading{4. Incomplete markets and the minimum-variance hedge.}
+\noindent\emph{Why the market becomes incomplete.} With stochastic volatility
+(a second Brownian motion) or jumps of random size, there are more sources of
+risk than traded assets, so the martingale representation in terms of $S$
+alone fails and no stock position replicates the call.
+
+\noindent\emph{It\^o's formula with jumps} (Shreve Ch.~11). For a process $X$
+with jumps $\Delta X_s=X_s-X_{s-}$,
+\begin{align*}
+f(X_t)={}&f(X_0)+\int_0^t f'(X_{s-})\,dX_s+\frac12\int_0^t f''(X_{s-})\,d[X]^c_s\\
+&+\sum_{0<s\le t}\big(f(X_s)-f(X_{s-})-f'(X_{s-})\Delta X_s\big).
+\end{align*}
+The sum replaces the linear (delta) approximation by the exact change of $f$ at
+each jump. That gap is why a delta hedge cannot cover jumps: a jump moves the
+option and the stock by different relative amounts.
+
+\noindent\emph{The minimum-variance hedge.} Minimise
+$\mathbb{E}^{\mathbb{Q}}[(Y-x-\int_0^T\vartheta_t\,dS_t)^2]$ for the payoff
+$Y=(S_T-K)^+$. Let $M_t=\mathbb{E}^{\mathbb{Q}}[Y\mid\mathcal F_t]$ (the option price) and
+decompose
+\[
+Y=\mathbb{E}^{\mathbb{Q}}[Y]+\int_0^T\vartheta^*_t\,dS_t+L_T,\qquad
+\vartheta^*_t=\frac{d\langle M,S\rangle_t}{d\langle S\rangle_t},
+\]
+where the residual $L$ is uncorrelated with $S$ (the Galtchouk--Kunita--Watanabe
+decomposition). Think of it as a regression: $\vartheta^*$ is the ``beta'' of
+option moves on stock moves, and $L$ is what no stock position can explain. The
+three pieces (a constant, a mean-zero stochastic integral and a residual
+uncorrelated with $S$) are orthogonal, so by Pythagoras, for any
+$(x,\vartheta)$,
+\[
+\mathbb{E}\Big[\Big(Y-x-\int\vartheta\,dS\Big)^2\Big]
+=(\mathbb{E}[Y]-x)^2+\mathbb{E}\int_0^T(\vartheta^*-\vartheta)^2\,d\langle S\rangle+\mathbb{E}[L_T^2].
+\]
+So the best initial capital is the price, the best holding is $\vartheta^*$, and
+$\mathbb{E}[L_T^2]$ is the unhedgeable risk.
+
+\noindent\emph{Example to derive on the board (Heston).} Let $dS=\sqrt v\,S\,dW$
+and $dv=\kappa_v(\theta-v)\,dt+\xi\sqrt v\,dB$ with $d\langle W,B\rangle=\rho\,dt$,
+and $M_t=C(t,S_t,v_t)$. Two-variable It\^o gives
+$dM=C_S\,dS+C_v\,dv+(\dots)\,dt$, so
+$d\langle M,S\rangle=(C_S\,vS^2+C_v\,\rho\xi vS)\,dt$ and $d\langle S\rangle=vS^2\,dt$:
+\[
+\vartheta^*=C_S+\frac{\rho\,\xi\,C_v}{S}.
+\]
+With $\rho<0$ (volatility rises when prices fall) and $C_v>0$, you hold fewer
+shares than the delta: a price fall comes with a volatility rise that partly
+protects the option's value. In jump models a similar covariance term appears
+for the jumps.
+
+\heading{5. The simulation model.}
+\noindent The paper's rough Hawkes--Heston model (under $\mathbb{Q}$, zero rate) is
+\[
+\frac{dS_t}{S_{t-}} = \sqrt{V_t}\,dW^S_t + (\text{compensated crash jumps}),
+\]
+\[
+V_t = g_0(t) + \int_0^t K(t-s)\,dZ_s,\qquad K(t)=\frac{t^{\alpha-1}}{\Gamma(\alpha)},
+\]
+where $Z$ collects the variance's own shocks (correlated with the price through
+$\rho$) and the jumps.
+\begin{compactitem}
+\item \emph{Leverage.} $\rho<0$: falling prices come with rising volatility.
+\item \emph{Crash jumps.} A jump of size $z$ multiplies the price by
+$e^{-\Lambda z}<1$ and pushes the variance up.
+\item \emph{Clustering.} Jumps arrive at a rate proportional to $V$, and each jump
+raises $V$, so jumps come in clusters.
+\item \emph{Memory and roughness.} $V$ depends on all past shocks with power-law
+weights $K$; with $\alpha<1$ the paths are rough.
+\item \emph{Compensated} jumps have their expected effect subtracted, so the
+price has no drift under $\mathbb{Q}$.
+\end{compactitem}
+
+\begin{table}[h]
+\centering\small
+\input{tables/model_params}
+\caption{Model parameters used in the paper and its code (initial volatility $\sqrt{V_0}\approx\ParVolZero\%$).}
+\end{table}
+
+\noindent\emph{How the hedge is computed.} Wang and Wang show that $\vartheta^*$
+has the covariance form of Section 4 (a Brownian part involving $\rho$, plus a
+jump part). They compute it with Fourier methods and a Riccati--Volterra
+equation. We use their published code and verified that it reproduces their
+results.
+
+\heading{6. What we did and what we found.}
+\noindent\emph{(a) Replication.} The official code gives a variance reduction
+against no hedge of \RepGKWStored{} (GKW) and \RepBSStored{} (BS delta); our
+rerun gives \RepGKW{} and \RepBS{}. The difference is Monte Carlo noise.
+\emph{Careful:} these two numbers come from the official code, not from the
+arXiv paper.
+
+\begin{table}[h]
+\centering\small
+\input{tables/replication}
+\caption{Replication: variance reduction vs.\ no hedge.}
+\label{tab:rep}
+\end{table}
+
+\noindent\emph{(b) Discrete rebalancing.} If you trade only at
+$t_0<\dots<t_{N-1}$ and pay $\kappa$ per unit of notional traded, the P\&L of
+the hedged short call is
+\[
+e = x + \sum_k\varphi_k(S_{k+1}-S_k) - \kappa\sum_k S_k|\varphi_k-\varphi_{k-1}|
+ - \kappa S_N|\varphi_{N-1}| - Y .
+\]
+
+\begin{table}[h]
+\centering\small
+\input{tables/sim_frequency}
+\caption{Simulation: variance reduction (s.e.) against the number of rebalancing dates.}
+\end{table}
+
+\noindent Findings.
+\begin{compactitem}
+\item Error grows as trading becomes rarer, as Section 3(a) predicts.
+\item The GKW advantage over BS grows with rarer trading: the better hedge ratio
+matters more when the position is held longer.
+\item GKW beats BS at every cost level ($z$ from \SimGKWvsBSzMin{} to
+\SimGKWvsBSzMax{}).
+\item Smart rules (bands, variance-triggered) beat fixed schedules by
+\SimLowGainMin--\SimLowGainMax{} at the same expected cost, but only when
+turnover is low. At the cost-optimal point the change is only
+\SimOptGKWChange{} for GKW ($z=\SimOptGKWz$), which is not significant.
+\end{compactitem}
+
+\noindent\emph{(c) Data and regimes.} The data are official NIFTY~50 closes and
+India VIX checked against NSE. Regime labels (calm/stress) are calibrated on
+2010--2018 only and use data up to day $t$ only. The main label is VIX above
+\RegVixQ{} (with hysteresis down to \RegVixQlo); the second is 21-day realised
+volatility above \RegRvQ\%. A statistical Markov-switching label is used only as a
+robustness check. Out of sample, stress days are followed by roughly twice the
+volatility (Table~\ref{tab:vreg}).
+
+\begin{table}[h]
+\centering\small
+\input{tables/regimes}
+\caption{Test period: future 5-day volatility after stress / after calm [95\% CI].}
+\label{tab:vreg}
+\end{table}
+
+\noindent\emph{(d) Backtests on NIFTY.} We sell a one-month ATM call each day and
+delta-hedge it. Options are either synthetic (priced at VIX) or traded (NSE
+bhavcopy, hedged with futures).
+\begin{compactitem}
+\item Daily rebalancing is best for costs up to 20\,bp, and the regime rule picked
+in training is worse in testing.
+\item At equal turnover, regime rules win only because of the COVID crash.
+\item Inverted labels (trading less in stress) are clearly worse.
+\item The seller's average gain is the gamma P\&L of Section 3(b).
+\end{compactitem}
+
+\begin{table}[h]
+\centering\small
+\input{tables/backtest_options}
+\caption{Traded-option backtest (test period).}
+\end{table}
+
+\heading{7. How we made the results trustworthy.}
+\begin{compactitem}
+\item \emph{Same paths for all rules} (common random numbers) and \emph{paired}
+standard errors. Jumps make unpaired errors huge.
+\item \emph{Equal-turnover comparison.} A rule that trades more always has lower
+error and higher cost, so we compare a rule with a coin-flip mixture of the two
+neighbouring fixed schedules that has the same expected turnover. The mixture is
+itself a valid strategy, so this is a fair benchmark.
+\item \emph{No look-ahead.} Every decision at $t$ uses data up to $t$. This is
+tested by truncating or scrambling future data and checking that past
+decisions do not change.
+\item \emph{Train/test split.} Rules and thresholds are chosen on 2010--2018 and
+evaluated once on 2019--2026.
+\item \emph{Placebos.} Inverted labels and year-old labels show whether any gain
+comes from the regime information.
+\item \emph{Block bootstrap.} Options written on consecutive days overlap, so
+their errors are correlated. Resampling blocks of days keeps that dependence.
+\item \emph{Criterion $J=\mathrm{Var}(e)+(\mathbb{E}\,\text{cost})^2$ on real
+data.} The seller's mean gain (about $+\OptMeanPnl$\,bp per traded option) is
+gamma P\&L, not hedging quality, so we remove it. $J$ equals the simulation
+criterion when the premium is fair.
+\item \emph{Data checks.} Expiring futures settle at the index close at all
+\FoExpiries{} expiries, put--call parity holds within $\pm\FoParityBand$\,bp,
+and the VIX data were reconciled against NSE.
+\item \emph{Tests.} An automated test suite (\texttt{tests/}), including a
+hand-computed option and agreement with the official code to 15 digits.
+\end{compactitem}
+
+\heading{8. Likely viva questions.}
+\qa{Why is Black--Scholes hedging perfect, and what breaks it here?}{It\^o plus
+the PDE gives $dC=C_S\,dS$, so the delta replicates the option. In practice we
+trade discretely (Section 3a), pay costs, and face stochastic volatility and
+jumps, which make the market incomplete (Section 4).}
+\qa{Why does the error grow as rebalancing becomes rarer?}{Between trades the
+option moves nonlinearly (gamma) while the hedge is frozen. Each interval adds
+variance $\approx\frac12\Gamma^2S^4\sigma^4h^2$, so the total grows like $h$.}
+\qa{Why did the option seller make money on NIFTY?}{Gamma P\&L:
+$\frac12\Gamma S^2(\sigma_i^2-\sigma_r^2)$. Implied volatility was above the
+volatility that followed most of the time (\IvrVixAbove\% of days for VIX), except
+in the COVID crash.}
+\qa{Why is the market incomplete?}{There are more sources of risk (a variance
+shock and jumps of random size) than traded instruments (the stock).}
+\qa{Why is the optimal initial capital the option price?}{The gain
+$\int\vartheta\,dS$ has mean zero under $\mathbb{Q}$, so the error splits off
+$(\mathbb{E}[Y]-x)^2$, which is minimised at $x=\mathbb{E}^{\mathbb{Q}}[Y]$.}
+\qa{What is $\langle M,S\rangle$?}{The expected instantaneous covariance of the
+option price and the stock. The holding must be chosen before the move, so it
+uses this expected covariance, not the realised one.}
+\qa{Did you derive the paper's hedge formula?}{No. We used the authors'
+published implementation and checked that it reproduces their results. Our
+contribution is the analysis of discrete, costly and regime-aware hedging, and
+the NIFTY backtests.}
+\qa{Why not just compare RMSE across rules?}{Rules with more trading have both
+lower error and higher cost. Comparing at equal expected turnover (equal cost)
+separates timing skill from simply trading more.}
+\qa{Why the block bootstrap?}{Daily-written one-month options overlap by up to
+20 days, so their errors are strongly correlated; i.i.d.\ standard errors would
+be far too small.}
+\qa{What does the COVID result mean?}{The apparent advantage of regime-aware
+rebalancing comes from one extreme episode. Excluding it, the advantage
+disappears. One crisis is too little evidence for a general effect.}
+\qa{Why not fit the paper's model to NIFTY?}{That means fitting the whole
+volatility smile with a specialised pricer: a project in itself. On real data we
+therefore use Black--Scholes and Black--76 deltas.}
+\qa{What would you do next?}{Make costs depend on the regime, compare the
+minimum-variance hedge of Section 4 with the delta on real options, and add
+static option hedges.}
+
+\heading{9. Glossary.}
+\noindent\emph{Delta, gamma}: first and second derivative of the option price
+in the stock price.
+\emph{Implied / realised volatility}: the volatility in the option's price /
+the volatility the stock actually showed.
+\emph{Variance reduction}: $1-\mathrm{Var}(\text{hedged})/\mathrm{Var}(\text{unhedged})$.
+\emph{Turnover}: notional traded. \emph{bp}: basis point, $0.01\%$.
+\emph{Placebo}: the same rule fed meaningless information.
+\emph{Look-ahead bias}: using data not yet available at decision time.
+\emph{Common random numbers}: evaluating all strategies on identical simulated paths.
+\emph{Bhavcopy}: NSE's daily end-of-day file of all derivatives contracts.
+
+\end{document}

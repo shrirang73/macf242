@@ -1,0 +1,201 @@
+{
+  "configuration": {
+    "paths": 5000,
+    "batch_size": 500,
+    "fine_steps": 512,
+    "coarse_steps": 256,
+    "maturity": 0.25,
+    "seed": 20260907,
+    "fourier_order_per_panel": 4,
+    "cutoffs": [
+      5.0,
+      10.0,
+      20.0,
+      40.0,
+      80.0
+    ],
+    "epsilon_over_T": [
+      0.25,
+      0.125,
+      0.0625,
+      0.03125,
+      0.015625
+    ],
+    "fixed_cutoff": 20.0
+  },
+  "model": {
+    "alpha": 0.527,
+    "rho": -0.731,
+    "b": -1.812,
+    "c": 0.115,
+    "jump_leverage": 0.276,
+    "beta0": 0.049,
+    "v0": 0.0079,
+    "s0": 1.0,
+    "jump_intensity": 1.0,
+    "jump_mean": 1.0
+  },
+  "fine_grid": {
+    "stock_mean": 1.000883076829861,
+    "stock_se": 0.0007832600358218919,
+    "running_max_adjustment_fraction": 0.6181546875,
+    "jump_count": 7,
+    "history_reference_gap": 3.3306690738754696e-16,
+    "terminal_memory_mean_abs_fixed_cutoff": [
+      0.016116956804141897,
+      0.0023610734640919302,
+      0.002763734333458281,
+      0.003221336740190325,
+      0.0037509290124833833,
+      0.004385194441456947
+    ],
+    "reference_capital_by_cutoff": [
+      0.06618011232090515,
+      0.03666626926108196,
+      0.023935744403972614,
+      0.019857540372772098,
+      0.01949096299956765
+    ],
+    "kernel_l1_error": [
+      0.19367297543891163,
+      0.1466555941233162,
+      0.10827917093561922,
+      0.07850045302753432,
+      0.056184262507497786
+    ],
+    "riccati_sup_error_fixed_cutoff": [
+      11.304946869517488,
+      9.614073423028056,
+      8.014145895536213,
+      6.548911363321813,
+      5.251143355796285
+    ],
+    "memory_l1_sup_fixed_cutoff": [
+      0.03537290626544194,
+      0.025319992034171877,
+      0.01791546453607349,
+      0.012647555444534886,
+      0.00895494181941701
+    ],
+    "clip_fraction": [
+      0.0020801607572115384,
+      0.0034430213341346155,
+      0.0056003230168269235,
+      0.008865181790865383,
+      0.012877591646634616
+    ],
+    "fixed_cutoff_strategy_l2": [
+      2.3010358524578464e-06,
+      1.3104557532258201e-06,
+      7.204215759012023e-07,
+      3.8507939910199123e-07,
+      2.0101227328754552e-07
+    ],
+    "fixed_cutoff_strategy_l2_se": [
+      1.0103086267731513e-07,
+      5.778689840721477e-08,
+      2.9638706177826753e-08,
+      1.39796762535091e-08,
+      6.4187285054024925e-09
+    ],
+    "fixed_cutoff_gain_sup": [
+      3.305504106292921e-06,
+      1.8846172649648991e-06,
+      1.0379784995448858e-06,
+      5.554068036175274e-07,
+      2.8936275696319926e-07
+    ],
+    "fixed_cutoff_gain_sup_se": [
+      1.5737038470362633e-07,
+      9.466538896244972e-08,
+      5.252136977117311e-08,
+      2.6733222646555978e-08,
+      1.3081752044574172e-08
+    ],
+    "diagonal": [
+      {
+        "epsilon_over_T": 0.25,
+        "cutoff": 5.0,
+        "capital": 0.06698635329350844,
+        "capital_gap_squared": 0.0022558120991737645,
+        "strategy_l2_reference": 0.00017601966090605766,
+        "strategy_l2_reference_se": 3.2691332349350725e-06,
+        "gain_sup_reference": 0.00028106697777437417,
+        "gain_sup_reference_se": 1.0023063826604582e-05,
+        "capital_strategy_distance_squared": 0.002431831760079822
+      },
+      {
+        "epsilon_over_T": 0.125,
+        "cutoff": 10.0,
+        "capital": 0.037819293396353926,
+        "capital_gap_squared": 0.0003359276951337597,
+        "strategy_l2_reference": 8.089762860748267e-05,
+        "strategy_l2_reference_se": 1.2689911700808141e-06,
+        "gain_sup_reference": 0.00011648278952665136,
+        "gain_sup_reference_se": 4.052099657982041e-06,
+        "capital_strategy_distance_squared": 0.00041682532374124237
+      },
+      {
+        "epsilon_over_T": 0.0625,
+        "cutoff": 20.0,
+        "capital": 0.025403019585960696,
+        "capital_gap_squared": 3.495241308071337e-05,
+        "strategy_l2_reference": 2.659673167288425e-05,
+        "strategy_l2_reference_se": 3.5583608432040945e-07,
+        "gain_sup_reference": 3.567463796825086e-05,
+        "gain_sup_reference_se": 1.8326974597921626e-06,
+        "capital_strategy_distance_squared": 6.154914475359762e-05
+      },
+      {
+        "epsilon_over_T": 0.03125,
+        "cutoff": 40.0,
+        "capital": 0.021388795151113915,
+        "capital_gap_squared": 3.6017668754427206e-06,
+        "strategy_l2_reference": 5.124478216251321e-06,
+        "strategy_l2_reference_se": 6.680137687756076e-08,
+        "gain_sup_reference": 6.909547570616258e-06,
+        "gain_sup_reference_se": 3.7294368014314424e-07,
+        "capital_strategy_distance_squared": 8.726245091694042e-06
+      },
+      {
+        "epsilon_over_T": 0.015625,
+        "cutoff": 80.0,
+        "capital": 0.020722334232626927,
+        "capital_gap_squared": 1.5162751136059198e-06,
+        "strategy_l2_reference": 6.066018028747664e-07,
+        "strategy_l2_reference_se": 9.615747450233074e-09,
+        "gain_sup_reference": 7.510909980467187e-07,
+        "gain_sup_reference_se": 1.1614526260715492e-08,
+        "capital_strategy_distance_squared": 2.1228769164806863e-06
+      }
+    ]
+  },
+  "grid_comparison": [
+    {
+      "steps": 256,
+      "epsilon_over_T": 0.03125,
+      "cutoff": 20.0,
+      "strategy_l2_same_cutoff": 3.866382827179158e-07,
+      "strategy_l2_same_cutoff_se": 6.8178018031979985e-09,
+      "gain_sup_same_cutoff": 5.446440309068146e-07,
+      "gain_sup_same_cutoff_se": 2.6590425729648433e-08,
+      "stock_mean": 1.0002805226043974,
+      "stock_se": 0.0007880444710826989,
+      "running_max_adjustment_fraction": 0.5826765625,
+      "jump_count": 9
+    },
+    {
+      "steps": 512,
+      "epsilon_over_T": 0.03125,
+      "cutoff": 20.0,
+      "strategy_l2_same_cutoff": 3.8507939910199123e-07,
+      "strategy_l2_same_cutoff_se": 1.39796762535091e-08,
+      "gain_sup_same_cutoff": 5.554068036175274e-07,
+      "gain_sup_same_cutoff_se": 2.6733222646555978e-08,
+      "stock_mean": 1.000883076829861,
+      "stock_se": 0.0007832600358218919,
+      "running_max_adjustment_fraction": 0.6181546875,
+      "jump_count": 7
+    }
+  ]
+}

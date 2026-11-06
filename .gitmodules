@@ -1,0 +1,3 @@
+[submodule "external/hedging_rough_hawkes_heston"]
+	path = external/hedging_rough_hawkes_heston
+	url = https://github.com/gagawjbytw/hedging_rough_hawkes_heston

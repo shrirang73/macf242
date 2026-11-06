@@ -1,0 +1,65 @@
+{
+  "maturity_days": 21,
+  "labels": [
+    "vix_hyst",
+    "vix_q75",
+    "rv21_q75",
+    "ms_filter"
+  ],
+  "vol_source": "own",
+  "design": "monthly call nearest to 21 trading days, strike nearest F(t0), held to expiry, hedged with same-expiry future",
+  "periods": {
+    "train": {
+      "options": 2067,
+      "first_start": "2010-07-20",
+      "last_start": "2018-12-12",
+      "excluded": {
+        "missing futures price on the path": 17,
+        "no bhavcopy for start day": 1,
+        "expiry after end of period": 12
+      },
+      "life_days": {
+        "min": 10,
+        "median": 21.0,
+        "max": 34
+      },
+      "strike_over_f0_range": [
+        0.9896516856349906,
+        1.0101435245591144
+      ],
+      "mean_premium_bp": 182.62470501631753,
+      "mean_payoff_bp": 192.5316155765776,
+      "mean_own_iv_fallback_share": 0.06204654713884724,
+      "period_window": [
+        "2010-07-20",
+        "2018-12-31"
+      ]
+    },
+    "test": {
+      "options": 1898,
+      "first_start": "2019-01-01",
+      "last_start": "2026-09-15",
+      "excluded": {
+        "missing futures price on the path": 12,
+        "no bhavcopy for start day": 1,
+        "no expiry with >= 10 days": 24
+      },
+      "life_days": {
+        "min": 10,
+        "median": 21.0,
+        "max": 34
+      },
+      "strike_over_f0_range": [
+        0.9944300742470544,
+        1.0064581061813302
+      ],
+      "mean_premium_bp": 179.36493963392797,
+      "mean_payoff_bp": 194.66080767392222,
+      "mean_own_iv_fallback_share": 0.025746232656394353,
+      "period_window": [
+        "2019-01-01",
+        "2026-10-21"
+      ]
+    }
+  }
+}

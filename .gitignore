@@ -1,0 +1,35 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Large, regenerable per-path / per-option arrays (rebuild with the scripts; see README)
+*.npz
+
+# NSE F&O bhavcopy extract: 103 MB in ~4,000 files. Rebuild with `python -m src.bhavcopy`.
+# The manifest (URLs and SHA-256 of every original file) is kept.
+data/raw/bhavcopy/nifty/
+
+# The base paper's PDF (arXiv:2609.08541): link to arXiv instead of copying it
+references/*.pdf
+
+# Student IDs stay out of the public repository: members.tex is local only
+report/members.tex
+proposal/members.tex
+
+# Local PDFs may contain student IDs; the shareable builds are in report/pdf/
+report/*.pdf
+proposal/*.pdf
+
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Copies of the authors' stored outputs: identical to the submodule's numerics/output/, read from there
+results/upstream_stored/

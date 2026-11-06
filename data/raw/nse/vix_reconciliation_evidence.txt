@@ -1,0 +1,18 @@
+# Evidence used to reconcile Yahoo ^INDIAVIX with NSE's India VIX history.
+# Source: https://www.nseindia.com/api/historicalOR/vixhistory (GET, built-in browser, 2026-10-22).
+# Fields: NSE row for the date (O/H/L/C, EOD_PREV_CLOSE, VIX_PTS_CHG) and the next row's EOD_PREV_CLOSE ("nextPrev").
+#
+# Rule: when Yahoo and NSE disagree, keep the value consistent with NSE's next-day EOD_PREV_CLOSE.
+# NSE rows with O = H = L = 0 and prev = 0 are placeholders whose close is carried forward.
+#
+# date        yahoo   nse_close  nse_O/H/L                 nse_prev  nextPrev  decision
+2013-08-22    29.06   27.68      28.09/29.86/27.99         28.09     27.68     NSE   (NSE row consistent; Yahoo wrong)
+2018-11-07    17.72   17.8775    18.505/18.505/16.81       18.505    17.8775   NSE   (Diwali Muhurat session)
+2021-02-12    22.04   23.045     0/0/0  (placeholder)      0         22.0425   YAHOO (NSE row is a placeholder)
+2021-03-30    20.49   20.65      0/0/0  (placeholder)      0         20.485    YAHOO (NSE row is a placeholder)
+#
+# Days missing from Yahoo, filled from NSE (all non-placeholder rows; close == next-day prev close up to 0.005):
+2010-11-05 19.22|2011-10-26 22.69|2012-10-26 14.21|2012-11-13 14.91|2014-10-23 12.8625|2015-11-11 16.905|2019-02-13 15.73|2019-03-29 17.185|2020-01-01 11.5975|2021-01-01 19.56|2021-01-22 22.4225|2021-02-15 21.475|2021-02-17 21.505|2021-05-05 21.9625|2021-05-11 19.83|2021-05-20 19.6525|2021-05-25 18.8425|2021-05-31 16.885|2021-07-05 12.0675|2022-12-26 15.9325|2024-01-01 14.68|2024-02-19 16.0175|2025-01-01 14.5075|2026-01-01 9.19|2026-10-21 15.68|2012-01-07 25.65|2012-03-03 28.2|2012-04-28 17.61|2012-09-08 14.76|2013-05-11 16.84|2013-11-03 19.49|2014-03-22 15.875|2015-02-28 16.97|2016-10-30 15.49|2019-10-27 15.585|2020-02-01 16.835|2020-11-14 19.13|2023-11-12 11.3475|2024-01-20 13.8025|2024-05-18 20.525|2025-02-01 14.095|2026-02-01 15.1
+#
+# Not available from NSE: 2024-03-02 (NIFTY special live session for disaster-recovery testing; no India VIX row).
+# NSE's API returns no India VIX rows before 2010-07-19; 2008-03-03 .. 2010-07-16 is Yahoo-only (unverified).

@@ -1,0 +1,15 @@
+\begin{tabular}{llp{8.2cm}}
+\toprule
+Parameter & Value & Meaning \\
+\midrule
+$\alpha$ & $0.527$ & roughness of the kernel $K(t)=t^{\alpha-1}/\Gamma(\alpha)$ \\
+$\rho$ & $-0.731$ & correlation between price and variance shocks (leverage) \\
+$b$ & $-1.812$ & mean reversion of the variance (negative = pulls back) \\
+$c$ & $0.115$ & vol-of-vol: size of Brownian shocks to the variance \\
+$\Lambda$ & $0.276$ & a jump of mark $z$ moves the log-price by $-\Lambda z$ \\
+$\beta$ & $0.049$ & slope of the initial curve $g_0(t)=V_0+\beta t^\alpha/\Gamma(\alpha+1)$ \\
+$V_0$ & $0.0079$ & initial variance \\
+$\kappa$, $m$ & $1, 1$ & jump marks: $\nu(dz)=\kappa e^{-z/m}dz/m$ \\
+$S_0$ & $1.0$ & initial price (prices are relative to $S_0$) \\
+\bottomrule
+\end{tabular}
