@@ -8,7 +8,9 @@ __pycache__/
 *.npz
 
 # NSE F&O bhavcopy extract: 103 MB in ~4,000 files. Rebuild with `python -m src.bhavcopy`.
-# The manifest (URLs and SHA-256 of every original file) is kept.
+# The manifest (URLs and SHA-256 of every original file) is kept, and so are the
+# 243 days the tests read (Jul-Dec 2010, Dec 2013-Apr 2014, Jun 2023), added with
+# `git add -f`.
 data/raw/bhavcopy/nifty/
 
 # The base paper's PDF (arXiv:2609.08541): link to arXiv instead of copying it

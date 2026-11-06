@@ -123,9 +123,9 @@ listed in the logs in `notes/`.
 - **Included.** The verified daily series `data/processed/nifty50.csv` and
   `data/processed/indiavix.csv`, the small raw files they are built from, and
   provenance manifests (URLs, retrieval times, SHA-256).
-- **Not included.** The NSE F&O bhavcopy extract (103 MB). Rebuild it with
-  `python -m src.bhavcopy`; `data/raw/bhavcopy/MANIFEST.jsonl` lists every
-  source file and its hash.
+- **Not included.** The full NSE F&O bhavcopy extract (103 MB). Rebuild it
+  with `python -m src.bhavcopy`; `data/raw/bhavcopy/MANIFEST.jsonl` lists every
+  source file and its hash. Only the 243 days the tests read are included.
 - **Sources.**
   - NIFTY 50: NSE Indices Ltd (niftyindices.com).
   - India VIX: Yahoo Finance (`^INDIAVIX`), checked and patched against NSE
@@ -138,7 +138,10 @@ listed in the logs in `notes/`.
 ## Report
 
 Every number in the report is generated from the result files by
-`python -m src.report_assets`; none is typed by hand. To build:
+`python -m src.report_assets`; none is typed by hand. The generated
+`report/numbers.tex` and `report/tables/` are committed, so the PDF builds
+straight away. Re-running `src.report_assets` needs the per-path and per-option
+arrays, so run the experiments in "Reproducing the results" first. To build:
 
 ```bash
 cd report
