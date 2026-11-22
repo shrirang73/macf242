@@ -1,0 +1,271 @@
+\documentclass[10pt,leqno]{amsart}
+\usepackage{graphicx}
+\baselineskip=16pt
+
+\usepackage{indentfirst,csquotes}
+
+\topmargin= .5cm
+\textheight= 22.5cm
+\textwidth= 32cc
+\baselineskip=16pt
+
+\evensidemargin= .9cm
+\oddsidemargin= .9cm
+
+\usepackage{amssymb,amsthm,amsmath}
+\usepackage{xcolor,paralist,hyperref,titlesec,fancyhdr,etoolbox}
+\newtheorem{theorem}{Theorem}[]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+\titleformat{\section}[display]{\normalfont\huge\bfseries\centering}{\centering\chaptertitlename\thechapter}{10pt}{\Large}
+\titlespacing*{\section}{0pt}{0ex}{0ex}
+
+\hypersetup{ colorlinks=true, linkcolor=black, filecolor=black, urlcolor=black }
+\def\proof{\noindent {\it Proof. $\, $}}
+\def\endproof{\hfill $\Box$ \vskip 5 pt }
+
+% --- Additions to the proposal template (report only) -----------------------
+\usepackage{booktabs}
+% The template's \titleformat breaks \section in amsart (\chaptertitlename is
+% undefined), so headings follow the proposal's bold run-in style.
+\newcommand{\heading}[1]{\medskip\noindent\textbf{#1}\par}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Q}{\mathbb{Q}}
+% All numbers below come from heston/report_assets.py (do not type them by hand).
+\input{numbers}
+% -----------------------------------------------------------------------------
+
+\begin{document}
+\title{Heston Option Pricing and Hedging: A Rolling Out-of-Sample Backtest on NIFTY Options}
+\author{MAC F244: Stochastic Calculus and Applications to Finance \\ Project Report (draft)}
+\date{\today}
+\maketitle
+\vspace{-1.5em}
+
+\let\thefootnote\relax
+\footnotetext{MSC2020: Primary 91G20, Secondary 60H30.}
+
+\bigskip
+
+\heading{1. Problem and summary.}
+\noindent The Heston (1993) model is the standard stochastic-volatility model: it
+reproduces the skew of index options and prices European options by a Fourier
+integral. We ask a practical question: \emph{does a daily-calibrated Heston model
+price and hedge real index options better than the market's own previous-day
+volatility smile, and does the answer change in crises?} We test it on all
+\NDays{} trading days of NSE NIFTY 50 monthly options from 2010 to 2026
+(\NQuotes{} traded out-of-the-money quotes), with a strictly out-of-sample design:
+every price and hedge ratio on day $t+1$ uses only information available at the close of day $t$.
+The main findings are:
+\begin{compactitem}
+\item \textbf{Pricing.} Heston beats a flat Black--Scholes volatility by a wide margin
+(one-day-ahead RMSE \PriceHestonAll{} against \PriceBSAtmAll{} implied-vol points) but does \emph{not} beat
+Black--Scholes at each option's own previous-day volatility (\PriceBSOwnAll{}). Its errors are concentrated in short-dated options in the far wings.
+\item \textbf{Hedging.} The plain Heston delta is clearly worse than Black--Scholes
+(variance $\HvsBSTest\%$, $z=\HvsBSTestZ$ in the test period). The minimum-variance Heston delta,
+which also hedges the part of the variance move correlated with the stock, repairs this
+($\MVvsHTest\%$ against the plain Heston delta) and \emph{ties} Black--Scholes
+($\MVvsBSTest\%$, $z=\MVvsBSTestZ$ in the test period). Its advantage comes from the COVID-19 crash:
+without it the difference is $\MVvsBSExCovid\%$ ($z=\MVvsBSExCovidZ$).
+\end{compactitem}
+This is an honest negative-to-neutral result, and we report it as such: we do not
+claim a tradable edge. All numbers, tables and figures in this report are generated
+by the accompanying code from the stored results.
+
+\heading{2. The Heston model and its pricing formula.}
+\noindent Work under a pricing measure $\Q$ with zero interest rate, and let $F_t$ be the
+forward (futures) price of the index. The Heston model is
+\begin{equation}\label{eq:heston}
+dF_t=\sqrt{v_t}\,F_t\,dW^1_t,\qquad dv_t=\kappa(\theta-v_t)\,dt+\xi\sqrt{v_t}\,dW^2_t,\qquad d\langle W^1,W^2\rangle_t=\rho\,dt,
+\end{equation}
+where $v_t$ is the instantaneous variance, $\kappa$ the speed of mean reversion, $\theta$
+the long-run variance, $\xi$ the volatility of variance and $\rho<0$ the leverage
+correlation that produces the downside skew. Variance stays positive if the Feller condition
+$2\kappa\theta\ge\xi^2$ holds; we do not impose it.
+
+\emph{Pricing.} The model is affine: the characteristic function of $\ln F_T$ is
+$f(u)=\E^\Q[e^{iu\ln F_T}]=\exp\{C(\tau,u)+D(\tau,u)\,v_0\}$, where $C,D$ solve a Riccati
+equation with closed-form solution (Heston 1993; we use the numerically stable
+``little trap'' branch of Albrecher et al.\ 2007). The call price is
+\[
+C_0=F_0P_1-KP_2,\qquad P_j=\tfrac12+\tfrac1\pi\int_0^\infty \mathrm{Re}\!\left[\frac{e^{-iu\ln K}f_j(u)}{iu}\right]du ,
+\]
+by the Gil-Pelaez inversion formula, with $f_1,f_2$ the characteristic functions under the share and
+the risk-neutral measure. We evaluate the integral by Gauss--Legendre quadrature on a
+frequency grid scaled by the option's total volatility $\sqrt{\bar v\,\tau}$, which keeps $128$ nodes accurate from
+5 days to one year (checked against adaptive quadrature, and against a Monte Carlo simulation with
+a full-truncation Euler scheme; an independent implementation written by a team member agrees with ours to within numerical tolerance).
+All five parameters $(v_0,\kappa,\theta,\xi,\rho)$ are calibrated each day, which makes the model
+consistent with that day's option prices; Figure~\ref{fig:surface} shows the fit.
+
+\heading{3. Hedging and the minimum-variance delta.}
+\noindent The model is incomplete: two Brownian motions, one traded asset. Let $C(t,F,v)$ be the call price.
+Itô's formula gives the martingale part of $dC$:
+\[
+dC\;=\;(\dots)\,dt+C_F\sqrt v\,F\,dW^1+C_v\,\xi\sqrt v\,dW^2 .
+\]
+Holding $\varphi$ units of $F$ removes part of the risk. The variance of the
+residual $dC-\varphi\,dF$ is minimised by the ratio of covariations
+\begin{equation}\label{eq:mv}
+\varphi^{\mathrm{MV}}=\frac{d\langle C,F\rangle}{d\langle F\rangle}=\frac{C_Fv F^2+\rho\xi\,v F\,C_v}{vF^2}
+=C_F+\frac{\rho\,\xi}{F}\,C_v ,
+\end{equation}
+since $d\langle F,v\rangle=\rho\xi vF\,dt$. The first term is the Heston delta
+$C_F$, which hedges only the part of the risk that comes through $W^1$ with the variance held fixed. The second term hedges the
+part of the variance move that is correlated with the stock; because $\rho<0$ and $C_v>0$ it lowers the hedge for
+a call. This is the Galtchouk--Kunita--Watanabe projection of the option onto the stock, specialised to Heston, and
+the empirical counterpart of the Hull--White (2017) minimum-variance delta. We compute $C_F$ and $C_v$ by finite differences
+of the pricing formula; Figure~\ref{fig:delta} shows how far $\varphi^{\mathrm{MV}}$ departs from a Black--Scholes delta.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/delta_surface}
+\caption{Minimum-variance Heston delta (left) and its difference from the Black--Scholes delta at the model's average volatility (right), as functions
+of log-moneyness and days to expiry, with parameters calibrated on \DeltaDate. The correction is of order $0.05$--$0.1$ in delta and
+changes sign across the strike range, a qualitative illustration only.}\label{fig:delta}
+\end{figure}
+
+\heading{4. Data and method.}
+\noindent \emph{Data.} Daily NSE F\&O bhavcopy for NIFTY, 19 July 2010 to 13 October 2026, extracted and verified in
+our earlier project (the same-expiry future settles at the index close on expiry day; put--call parity holds to a few basis points
+near the money). We keep monthly expiries, options that traded that day, and out-of-the-money quotes only (puts below the forward, calls above; a put is converted to a call by parity), within
+$\pm12\%$ log-moneyness and 5 to 70 trading days to expiry. The forward is the same-expiry future (Black-76, zero discounting). Table~\ref{tab:data} summarises the sample.
+
+\begin{table}[ht]
+\centering
+\caption{The option sample.}\label{tab:data}
+\input{tables/data}
+\end{table}
+
+\emph{Calibration.} Each day we fit $(v_0,\kappa,\theta,\xi,\rho)$ to all quoted maturities by least squares on vega-scaled price errors (approximately implied-vol errors),
+with box bounds, a warm start from the previous day's parameters, and a small ridge towards them (the speed $\kappa$ is weakly identified from one-to-three-month options). The median in-sample
+fit error is \FitMedian{} vol points; on \FitBad{} days it exceeds 3 points (the worst fits, above 5 points, cluster in March--April 2020 and October 2026). Table~\ref{tab:params} and Figure~\ref{fig:params} show the parameter paths.
+The fitted $\sqrt{v_0}$ tracks India VIX closely, the leverage correlation is stable around \RhoMedian{}, and $\xi$ rises in crises. The speed $\kappa$ sits at its upper bound on \KappaBoundPct\% of days,
+so we do not interpret it economically.
+
+\begin{table}[ht]
+\centering
+\caption{Median calibrated parameters by sample; ``$\kappa$ at bound'' is the share of days with $\kappa$ at its upper bound 15; fit RMSE in implied-vol points.}\label{tab:params}
+\input{tables/params}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/params_ts}
+\caption{Calibrated parameters through time (21-day rolling medians for $\rho,\xi$). Grey bands are the five stress events analysed in Section~6, numbered 1--5 in the order of Table~\ref{tab:hedge}.}\label{fig:params}
+\end{figure}
+
+\emph{Out-of-sample pricing.} For every pair of consecutive trading days $(t,t+1)$ and every option quoted on both, we price it on day $t+1$ using only day-$t$ information: (i) \emph{Heston} with the parameters calibrated at $t$, evaluated at day $t+1$'s forward and
+time to expiry; (ii) \emph{BS own vol}, Black--Scholes at that contract's own implied vol at $t$ (``sticky strike'', the usual market benchmark); (iii) \emph{BS flat}, the ATM implied vol of that expiry at $t$. The error is model implied vol minus market implied vol at $t+1$.
+
+\emph{Hedging.} Each trading day we sell one monthly call (expiry nearest 21 trading days, at least 10) at the strike nearest the forward, and hedge it daily with the same-expiry future to expiry. The hedging error is
+$e=C_0-(F_T-K)^++\sum_k\varphi_k(F_{k+1}-F_k)$ per unit of $F_0$. We compare Black--Scholes at the option's own vol, the Heston delta $C_F$, and the minimum-variance delta \eqref{eq:mv}.
+Transaction costs are ignored (the option trade is common to all hedges).
+
+\emph{Statistics.} Daily losses are strongly serially dependent (overlapping lives, persistent volatility), so every comparison is \emph{paired} and its uncertainty comes from a moving-block bootstrap on 21-day blocks of dates, never from individual observations.
+The hedging comparison uses variances, since the sold option's premium shifts the mean error. The split into a 2010--18 ``train'' and a 2019--26 ``test'' sample is chronological and descriptive only: nothing is tuned, because the calibration is daily with no look-ahead. Stress is the India-VIX hysteresis label of our earlier project; the five event windows were fixed before looking at results.
+
+\heading{5. Pricing results.}
+\noindent Table~\ref{tab:pricing} and Figures~\ref{fig:oosyear}--\ref{fig:oossurf} give the one-day-ahead errors ($\NOptionDays{}$ option-days).
+Over the 2019--26 test sample the RMSEs are \PriceHestonTest{} (Heston), \PriceBSOwnTest{} (BS own vol) and \PriceBSAtmTest{} (BS flat) vol points. Three facts stand out.
+First, Heston removes most of the smile error of a flat volatility, in every year and in every moneyness bucket except at the money, where a flat volatility fitted to the ATM option is naturally slightly better (Figure~\ref{fig:oosmoney}). Second, it never beats the previous-day own-vol smile, which is a very demanding benchmark: it contains each contract's exact price on the previous day, while Heston has five parameters for about 100 quotes. Third, the gap is largest
+for short-dated options far from the money (Figure~\ref{fig:oossurf}), where a five-parameter smooth model cannot follow the market's short-end skew, and it narrows in stress and in the COVID window, when the whole surface moves together and the previous-day smile becomes stale too.
+
+\begin{table}[ht]
+\centering
+\caption{One-day-ahead pricing error (RMSE, implied-vol points) by sample. The last column is the change in mean squared error of Heston relative to BS own vol.}\label{tab:pricing}
+\input{tables/pricing}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/surface3d}
+\caption{Calibrated Heston implied-vol surface (coloured) and market quotes (dots) on a calm day (\SurfDateA, left) and in the COVID-19 crash (\SurfDateB, right). The surface captures the skew and the term structure; note the vertical scales.}\label{fig:surface}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/oos_by_year}
+\caption{One-day-ahead pricing RMSE by year. The ordering BS own $<$ Heston $<$ BS flat holds in every year; 2020 is the worst year for all three.}\label{fig:oosyear}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.52\textwidth]{figures/oos_by_moneyness}
+\caption{Test-period RMSE by log-moneyness. Heston is close to the own-vol benchmark near the money and loses in the wings.}\label{fig:oosmoney}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/oos_surface}
+\caption{Left: Heston mean absolute error (test period) over moneyness and maturity. Right: its excess over BS own vol. The excess is concentrated in options with fewer than 20 days to expiry in the wings (cells use at least 200 observations, bilinearly interpolated for display).}\label{fig:oossurf}
+\end{figure}
+
+\heading{6. Hedging results and market events.}
+\noindent Table~\ref{tab:hedge} reports the standard deviation of the hedging error (basis points of the initial forward) and the paired change in variance relative to Black--Scholes; an asterisk marks $|z|\ge2$.
+Figures~\ref{fig:hedgedist} and \ref{fig:hedgeroll} show the distributions and the rolling error.
+
+\begin{table}[ht]
+\centering
+\caption{Hedging error of a short ATM monthly call, daily hedged. Columns None, BS, Heston, MV (Heston minimum-variance): standard deviation of the error in bp of $F_0$. Last two columns: paired change in variance relative to BS own vol ($^*$ for block-bootstrap $|z|\ge 2$). The five events are the grey bands of Figure~\ref{fig:params}, in that order.}\label{tab:hedge}
+\small
+\input{tables/hedging}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/hedge_dist}
+\caption{Left: distribution of hedging errors in the test period. Right: paired change in hedging variance of the Heston minimum-variance hedge relative to BS, with 95\% block-bootstrap intervals; intervals that straddle zero (most of them) are not evidence of a difference.}\label{fig:hedgedist}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/hedge_rolling}
+\caption{Rolling (63-option) mean absolute hedging error in the test period. The minimum-variance hedge is visibly better only during the COVID-19 crash.}\label{fig:hedgeroll}
+\end{figure}
+
+\noindent \emph{Reading.} (1) The plain Heston delta is significantly worse than Black--Scholes in the test period ($\HvsBSTest\%$, $z=\HvsBSTestZ$): it ignores that the stock and its variance move together, and a flat own-vol Black--Scholes delta embeds the skew. (2) The minimum-variance correction removes this deficit ($\MVvsHTest\%$, $z=\MVvsHTestZ$ against the plain Heston delta), bringing the hedge to a tie with Black--Scholes: standard deviation \HedgeSDMV{} bp against \HedgeSDBS{} bp in the test period, against \HedgeSDNone{} bp unhedged.
+(3) The only significant improvement over Black--Scholes is in the COVID-19 window ($\MVvsBSCovid\%$, $z=\MVvsBSCovidZ$, $n=\NCovid$ options); without COVID the test-period difference is $\MVvsBSExCovid\%$ ($z=\MVvsBSExCovidZ$). In the taper-tantrum and demonetisation windows the point estimates go the other way, though not significantly.
+(4) With about a dozen samples and several comparisons each, a lone $|z|\approx2$ is weak evidence, and the COVID result rests on 86 overlapping options in one episode. The robust reading is that the minimum-variance Heston hedge is \emph{as good as} Black--Scholes at the option's own vol and \emph{may} help in a crash, which is consistent with the finding of our earlier project on regime-aware hedging that crash windows drive apparent gains.
+
+\heading{7. Limitations and what we did not do.}
+\noindent
+\begin{compactitem}
+\item \textbf{One market.} Only NIFTY has verified historical option prices in our hands. We looked for free historical chains for other markets and found none we could verify (the US archives are paid; Taiwan's exchange offers about three years of daily files, which we did not test). We therefore make no claim about other markets, and the study is not a multi-market backtest.
+\item \textbf{Data timing.} Daily closes of options and futures are not synchronous, which adds noise to implied vols and to the start premium; this mostly affects levels, not the paired comparisons.
+\item \textbf{Model.} European options only; American exercise is not studied. $\kappa$ is not identified (\KappaBoundPct\% of days at the bound), so conclusions rest on prices and deltas, not on parameter values. A mild ridge towards the previous day's parameters stabilises the fit and is part of the method, not tuned on the test period.
+\item \textbf{Hedging.} Zero discounting; no transaction costs, no bid--ask spreads on the option; delta hedging with futures only (no hedge with other options), and near expiry the time to maturity is floored at 5 days in both models' delta formulae.
+\item \textbf{Statistics.} Events are few and short, one option per day with overlapping lives (so the effective sample is far smaller than the number of start days), and no correction for multiple comparisons.
+\end{compactitem}
+
+\heading{8. Conclusion.}
+\noindent Calibrating Heston every day on real NIFTY options gives a model that is far better than a flat volatility but not better than the market's own previous-day smile for pricing, and whose minimum-variance delta ties Black--Scholes for hedging, outperforming only in the COVID-19 crash. The practical lesson is that the
+variance-minimising correction $\rho\xi C_v/F$ in \eqref{eq:mv} matters: ignoring it makes a calibrated Heston hedge significantly worse than Black--Scholes. For implementation one would need transaction costs, a hedge with other options and further markets; our evidence does not support claiming a tradable advantage.
+
+\heading{References.}
+\begin{compactenum}[\small 1.]
+\item {\small S.\ Heston, A closed-form solution for options with stochastic volatility with applications to bond and currency options, \emph{Rev.\ Financ.\ Stud.} 6 (1993) 327--343.}
+\item {\small H.\ Albrecher, P.\ Mayer, W.\ Schoutens, J.\ Tistaert, The little Heston trap, \emph{Wilmott} (2007) 83--92.}
+\item {\small J.\ Gil-Pelaez, Note on the inversion theorem, \emph{Biometrika} 38 (1951) 481--482.}
+\item {\small R.\ Lord, R.\ Koekkoek, D.\ van Dijk, A comparison of biased simulation schemes for stochastic volatility models, \emph{Quant.\ Finance} 10 (2010) 177--194.}
+\item {\small J.\ Hull, A.\ White, Optimal delta hedging for options, \emph{J.\ Banking Finance} 82 (2017) 180--190.}
+\item {\small G.\ Bakshi, C.\ Cao, Z.\ Chen, Empirical performance of alternative option pricing models, \emph{J.\ Finance} 52 (1997) 2003--2049.}
+\item {\small S.\ Shreve, \emph{Stochastic Calculus for Finance II}, Springer, 2004.}
+\item {\small J.\ Gatheral, \emph{The Volatility Surface}, Wiley, 2006.}
+\item {\small NSE India, F\&O bhavcopy archives (nsearchives.nseindia.com); India VIX and NIFTY 50 histories, NSE.}
+\end{compactenum}
+
+\bigskip
+% Public builds define \PublicBuild to force the names-only list.
+\ifdefined\PublicBuild
+\input{members_public}
+\else
+\IfFileExists{members.tex}{\input{members}}{\input{members_public}}
+\fi
+
+\end{document}

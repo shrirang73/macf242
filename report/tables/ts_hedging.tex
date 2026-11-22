@@ -1,0 +1,16 @@
+% Transcribed from the team PDF, Table 2 (daily rebalancing, 5 bp cost); see teammate_numbers.tex.
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Full test} & \multicolumn{2}{c}{Test excl.\ COVID} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Hedge & Score & ES$_{99\%}$ & Score & ES$_{99\%}$ \\
+\midrule
+Black--Scholes (India VIX) & 64.8 & 313.1 & 52.3 & 213.5 \\
+Heston delta, fixed & 64.9 & 293.6 & 53.6 & 210.1 \\
+Heston MV, fixed & 62.2 & 278.2 & 52.8 & 219.6 \\
+Heston MV, expanding window & 62.1 & 278.3 & 52.7 & 219.6 \\
+$\alpha=1$ control, MV & 62.8 & 293.9 & 52.9 & 225.6 \\
+Rough Heston delta & 69.3 & 325.1 & 56.1 & 216.7 \\
+Rough Heston MV & 63.1 & 293.2 & 54.3 & 235.9 \\
+\bottomrule
+\end{tabular}

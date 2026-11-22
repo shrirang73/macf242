@@ -1,0 +1,717 @@
+<meta charset="utf-8">
+<title>NIFTY Hedged Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a trading-desk page. Sticky control rail on top, then the desk's
+   result, then four short sections that open the box: one trade, why it pays,
+   today's ticket, what can go wrong. Series identity: our hedge = accent blue. */
+:root {
+  --bg: #f4f6f9; --surface: #fcfcfd; --surface-2: #eef1f5; --ink: #0f1622; --ink-2: #485164;
+  --muted: #7a8292; --line: #e1e5eb; --line-2: #c9cfd8;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ref: #8d939e;
+  --good-ink: #00702a; --bad-ink: #c23434; --pos: #2a78d6; --neg: #e34948; --mid: #f0efec;
+  --event: rgba(227,73,72,0.09); --shadow: 0 1px 2px rgba(15,22,34,.06), 0 8px 24px rgba(15,22,34,.06);
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1016; --surface: #151a22; --surface-2: #1c222c; --ink: #eef1f5; --ink-2: #b9c0cc;
+  --muted: #8b93a2; --line: #252c37; --line-2: #343c49;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #8d939e;
+  --good-ink: #2fbf5b; --bad-ink: #ef7474; --pos: #3987e5; --neg: #e66767; --mid: #383835;
+  --event: rgba(230,103,103,0.12); --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1016; --surface: #151a22; --surface-2: #1c222c; --ink: #eef1f5; --ink-2: #b9c0cc;
+  --muted: #8b93a2; --line: #252c37; --line-2: #343c49;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #8d939e;
+  --good-ink: #2fbf5b; --bad-ink: #ef7474; --pos: #3987e5; --neg: #e66767; --mid: #383835;
+  --event: rgba(230,103,103,0.12); --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4.2vw, 44px); line-height: 1.08; font-weight: 700; }
+h2 { font-size: clamp(21px, 2.4vw, 27px); font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); } .ink2 { color: var(--ink-2); }
+.mono { font-family: var(--font-mono); }
+a { color: var(--s1); }
+
+/* header */
+header.top { padding-block: 40px 22px; display: grid; gap: 14px; }
+.lead { font-size: 17px; color: var(--ink-2); max-width: 70ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); }
+.facts b { color: var(--ink); font-weight: 600; }
+
+/* control rail */
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(8px); border-block: 1px solid var(--line); }
+.rail .wrap { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: end; padding-block: 12px; }
+.ctl { display: grid; gap: 5px; min-width: 0; }
+.ctl > label, .ctl > .lbl { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-body); color: var(--ink-2); background: transparent; border: 0; padding: 7px 11px; cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.cap { display: flex; gap: 6px; align-items: center; }
+.cap input { width: 132px; font: 600 14px var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 9px; font-variant-numeric: tabular-nums; }
+.range { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.range input[type=range] { width: 120px; accent-color: var(--s1); }
+.switch { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.switch input { accent-color: var(--s1); width: 16px; height: 16px; }
+.btn { font: 600 13px var(--font-body); border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--s1); border-color: var(--s1); color: #fff; }
+.btn:hover { filter: brightness(1.04); }
+
+section.block { padding-block: 38px 8px; display: grid; gap: 16px; }
+.head { display: grid; gap: 6px; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.kpi .k { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .03em; }
+.kpi .v { font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; letter-spacing: -0.01em; }
+.kpi .s { font-size: 12.5px; color: var(--ink-2); }
+.pos { color: var(--good-ink); } .neg { color: var(--bad-ink); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+.chart { width: 100%; height: 420px; }
+.chart.sm { height: 300px; }
+.chart.xs { height: 250px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.grid-trade { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 16px; }
+
+/* replay */
+.replay { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.ticker { font: 700 22px var(--font-body); font-variant-numeric: tabular-nums; }
+.toast { font-size: 13.5px; padding: 8px 12px; border-radius: 8px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+
+/* contract note */
+.note { font-family: var(--font-mono); font-size: 13px; border: 1px dashed var(--line-2); border-radius: 10px; padding: 14px; display: grid; gap: 6px; background: var(--surface); }
+.note .t { font-family: var(--font-body); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.note .line { display: flex; justify-content: space-between; gap: 12px; }
+.note .line span:last-child { text-align: right; font-weight: 600; }
+.note hr { border: 0; border-top: 1px dashed var(--line-2); margin: 4px 0; width: 100%; }
+.sell { color: var(--bad-ink); } .buy { color: var(--good-ink); }
+
+/* monthly table */
+.tbl-wrap { overflow-x: auto; }
+table.months { border-collapse: separate; border-spacing: 2px; font-size: 12px; font-variant-numeric: tabular-nums; min-width: 760px; width: 100%; }
+table.months th { font-weight: 600; color: var(--muted); padding: 4px 6px; text-align: right; }
+table.months th:first-child { text-align: left; }
+table.months td { text-align: right; padding: 5px 6px; border-radius: 4px; color: var(--ink); }
+table.months td.y { text-align: left; font-weight: 600; color: var(--ink-2); }
+table.months td.tot { font-weight: 700; }
+
+.formula { font-family: var(--font-mono); font-size: 14px; padding: 10px 12px; background: var(--surface-2); border-radius: 8px; overflow-x: auto; }
+.bul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 72ch; color: var(--ink-2); }
+footer { padding-block: 36px 48px; color: var(--muted); font-size: 13px; display: grid; gap: 8px; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); }
+
+@media (max-width: 860px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2, .grid-trade { grid-template-columns: minmax(0, 1fr); }
+  .chart { height: 360px; }
+  .rail { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<header class="wrap top">
+  <div class="eyebrow">MAC F244 · Stochastic calculus project · live demo</div>
+  <h1>Run a NIFTY insurance desk with our hedge</h1>
+  <p class="lead">Index options are insurance, and buyers overpay for them. The desk sells one at-the-money monthly NIFTY call every trading day and hedges it daily with futures using the minimum-variance delta from our Itô derivation. Pick your capital and settings; every number below is recomputed from the real NSE data we backtested.</p>
+  <div class="facts" id="facts"></div>
+</header>
+
+<div class="rail" role="region" aria-label="Desk settings">
+  <div class="wrap">
+    <div class="ctl">
+      <label for="capital">Your capital</label>
+      <div class="cap">
+        <input id="capital" inputmode="numeric" value="10,00,000" aria-describedby="capital-hint">
+        <div class="seg" id="cap-presets">
+          <button data-v="100000">₹1 L</button><button data-v="1000000" aria-pressed="true">₹10 L</button><button data-v="10000000">₹1 Cr</button>
+        </div>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="lev">Options sold vs capital</label>
+      <div class="range"><input id="lev" type="range" min="1" max="5" step="0.5" value="3"><span id="lev-v">3.0×</span></div>
+    </div>
+    <div class="ctl">
+      <div class="lbl" id="hedge-lbl">Hedge</div>
+      <div class="seg" id="hedge" role="group" aria-labelledby="hedge-lbl">
+        <button data-v="mv" aria-pressed="true">Heston MV (ours)</button><button data-v="bs">Black–Scholes</button><button data-v="none">None</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="lbl" id="cost-lbl">Trading costs</div>
+      <div class="seg" id="costs" role="group" aria-labelledby="cost-lbl">
+        <button data-v="low" aria-pressed="true" title="Futures 1 bp per trade, option half-spread 1% of premium">Low</button><button data-v="high" title="Futures 5 bp per trade, option half-spread 3% of premium">High</button><button data-v="zero" title="No costs">None</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="lbl" id="per-lbl">Period</div>
+      <div class="seg" id="period" role="group" aria-labelledby="per-lbl">
+        <button data-v="all" aria-pressed="true">2010–26</button><button data-v="test">2019–26</button><button data-v="covid">2020</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label class="switch"><input type="checkbox" id="skip"> Pause selling when India VIX signals stress</label>
+      <label class="switch"><input type="checkbox" id="compare" checked> Show the other hedges</label>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section class="block" aria-labelledby="h-result">
+    <div class="head">
+      <h2 id="h-result">What your desk would have made</h2>
+      <p class="ink2" id="result-line"></p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <div class="row" style="justify-content: space-between">
+        <div class="legend" id="legend-main"></div>
+        <div class="replay">
+          <button class="btn primary" id="play">▶ Replay the years</button>
+          <span class="ticker" id="ticker" aria-live="polite"></span>
+        </div>
+      </div>
+      <div id="toast" class="toast" hidden></div>
+      <div id="chart-equity" class="chart" role="img" aria-label="Desk equity and drawdown over time"></div>
+      <p class="muted" style="font-size:12.5px">Drag the slider under the chart to zoom into any period; the figures above follow the window. Red bands mark market stress events.</p>
+    </div>
+    <div class="card">
+      <h3>Month by month</h3>
+      <p class="muted" style="font-size:13px; margin-top:2px">Profit or loss of the desk in each month, in ₹ for your settings (the table view of the chart above).</p>
+      <div class="tbl-wrap" style="margin-top:10px"><table class="months" id="months"></table></div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-nifty">
+    <div class="head">
+      <h2 id="h-nifty">Why not just buy NIFTY?</h2>
+      <p class="ink2">Buying the index earns more in a rising market but rides every crash. The hedged desk earns a smaller premium that barely depends on market direction. Same capital, same period:</p>
+    </div>
+    <div class="grid2">
+      <div class="card"><div id="chart-vs" class="chart sm" role="img" aria-label="Desk versus NIFTY buy and hold"></div></div>
+      <div class="card" id="vs-table"></div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-trade">
+    <div class="head">
+      <h2 id="h-trade">One trade, start to finish</h2>
+      <p class="ink2">Pick any day. You see the call the desk sold, how NIFTY moved until expiry, how many futures each hedge held, and where the money came from.</p>
+    </div>
+    <div class="row">
+      <label class="ctl" for="tdate"><span class="lbl">Sale date</span><input id="tdate" type="date" class="btn" style="font-weight:500"></label>
+      <div class="seg" id="tpresets">
+        <button data-q="calm">A calm month</button><button data-q="covid">COVID crash</button><button data-q="rally">Strong rally</button><button data-q="random">Random</button>
+      </div>
+    </div>
+    <div class="grid-trade">
+      <div class="note" id="ticket"></div>
+      <div class="card"><div id="chart-trade" class="chart" role="img" aria-label="Path of one trade"></div></div>
+    </div>
+    <div class="card" id="breakdown"></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-why">
+    <div class="head">
+      <h2 id="h-why">Why the premium exists</h2>
+      <p class="ink2">India VIX is the volatility option buyers pay for. The line below it is the volatility NIFTY actually delivered over the following month. The gap between them is the insurance margin the desk collects; the spikes above it are the claims.</p>
+    </div>
+    <div class="card"><div id="chart-vrp" class="chart sm" role="img" aria-label="India VIX against realised volatility"></div><div class="row" id="vrp-stats" style="margin-top:6px"></div></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-ticket">
+    <div class="head">
+      <h2 id="h-ticket">The desk's latest ticket</h2>
+      <p class="ink2" id="ticket-intro"></p>
+    </div>
+    <div class="grid2">
+      <div class="note" id="latest"></div>
+      <div class="card" style="display:grid; gap:10px">
+        <h3>Where the maths enters</h3>
+        <div class="formula">φ = ∂C/∂F + (ρ·ξ / F) · ∂C/∂v</div>
+        <p class="ink2" style="font-size:14px">The first term is the ordinary delta with volatility held fixed. The second term hedges the part of the volatility move that comes with the index move: NIFTY falls when volatility jumps (ρ &lt; 0), so the desk holds slightly fewer futures. ρ and ξ come from fitting the Heston model to that day's option prices.</p>
+        <div id="latest-maths" class="ink2" style="font-size:14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-risk">
+    <div class="head">
+      <h2 id="h-risk">What can go wrong</h2>
+      <p class="ink2">The desk earns a little on most days and loses a lot on a few. Costs decide whether anything is left.</p>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Annual return against trading costs</h3><p class="muted" style="font-size:13px">On your capital, current period and leverage. 1× = the low-cost setting.</p><div id="chart-cost" class="chart xs" role="img" aria-label="Return against cost level"></div></div>
+      <div class="card"><h3>The worst stretches</h3><p class="muted" style="font-size:13px">Largest peak-to-trough losses of your desk in the current period.</p><div id="worst" style="margin-top:8px"></div></div>
+    </div>
+    <ul class="bul">
+      <li>Short options lose fast in crashes; leverage multiplies those losses as much as the gains.</li>
+      <li>Costs are assumptions (futures fee per trade and half the option bid–ask spread); our data has no bid–ask quotes.</li>
+      <li>Margin, funding and exchange rules are not modelled. Past results do not predict future ones.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <div><b>How it was built.</b> NSE F&amp;O bhavcopy 2010–2026 (NIFTY futures and options, traded contracts only), NIFTY 50 and India VIX from NSE. Heston fitted to each day's option chain; options valued daily at their own market implied volatility; hedges and P&amp;L from the project code (<span class="mono">heston/strategy.py</span>). Rules and cost levels were fixed in advance, not tuned.</div>
+    <div>A course demonstration of a stochastic-calculus result, not investment advice.</div>
+  </footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+(() => {
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const N = D.days.length;
+const T = D.days.map(s => Date.parse(s + "T00:00:00Z"));
+const HEDGES = ["mv", "bs", "none"];
+const NAME = { mv: "Heston MV hedge", bs: "Black–Scholes hedge", none: "No hedge" };
+const COLOR_VAR = { mv: "--s1", bs: "--s2", none: "--s3" };
+const COSTS = { low: [1, 1], high: [5, 3], zero: [0, 0] };   // [futures bp, option half-spread %]
+const state = { capital: 1e6, lev: 3, hedge: "mv", cost: "low", period: "all", skip: false, compare: true, win: [0, N - 1] };
+
+// ---------- formatting ----------
+const inr0 = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+const fmtINR = v => (v < 0 ? "−₹" : "₹") + inr0.format(Math.abs(Math.round(v)));
+function fmtShort(v) {
+  const a = Math.abs(v), s = v < 0 ? "−₹" : "₹";
+  if (a >= 1e7) return s + (a / 1e7).toFixed(2) + " Cr";
+  if (a >= 1e5) return s + (a / 1e5).toFixed(2) + " L";
+  return s + inr0.format(Math.round(a));
+}
+const pct = (v, d = 1) => (v < 0 ? "−" : v > 0 ? "+" : "") + Math.abs(v).toFixed(d) + "%";
+const signed = (v, f) => (v < 0 ? "−" : "+") + f(Math.abs(v));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const dateStr = i => D.days[i];
+const monthName = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ---------- core computation (same formulas as heston/strategy.py) ----------
+// comp values are fractions of book notional x 1e4; daily book P&L r = gross - fee*fut - spread*opt
+function dailyReturns(hedge, cost, skip) {
+  const [fbp, spr] = COSTS[cost];
+  const out = new Float64Array(N);
+  for (const grp of skip ? ["calm"] : ["calm", "stress"]) {
+    const c = D.comp[hedge][grp];
+    for (let t = 0; t < N; t++) out[t] += (c.gross[t] - (fbp / 1e4) * c.fut[t] - (spr / 100) * c.opt[t]) / 1e4;
+  }
+  return out;
+}
+function stats(r, a, b) {
+  const L = state.lev, C = state.capital;
+  let sum = 0, sum2 = 0, n = 0, eq = 0, peak = 0, dd = 0, worst = 0, ddStart = a, ddEnd = a, pk = a;
+  const months = new Map();
+  for (let t = a; t <= b; t++) {
+    const x = r[t]; sum += x; sum2 += x * x; n++;
+    eq += x; if (eq > peak) { peak = eq; pk = t; }
+    if (eq - peak < dd) { dd = eq - peak; ddStart = pk; ddEnd = t; }
+    if (x < worst) worst = x;
+    const key = D.days[t].slice(0, 7); months.set(key, (months.get(key) || 0) + x);
+  }
+  const mean = sum / n, sd = Math.sqrt(Math.max(sum2 / n - mean * mean, 0) * n / Math.max(n - 1, 1));
+  const mvals = [...months.values()];
+  return {
+    total: eq * L * C, annPct: 252 * mean * L * 100, sharpe: sd > 0 ? (mean / sd) * Math.sqrt(252) : 0,
+    ddRs: dd * L * C, ddPct: dd * L * 100, ddStart, ddEnd, worstRs: worst * L * C,
+    posMonths: 100 * mvals.filter(v => v > 0).length / Math.max(mvals.length, 1), months, years: n / 252
+  };
+}
+function equityPath(r, a, b) {
+  // an account cannot go below zero: once losses use up the capital the desk is wiped out
+  const L = state.lev, C = state.capital, eq = [], dd = [];
+  let e = 0, peak = 0, wiped = null;
+  for (let t = a; t <= b; t++) {
+    if (wiped === null) { e += r[t]; if (1 + e * L <= 0) { e = -1 / L; wiped = t; } }
+    peak = Math.max(peak, e); eq.push([T[t], C + e * L * C]); dd.push([T[t], (e - peak) * L * C]);
+  }
+  return { eq, dd, wiped };
+}
+function wipedAt(r, a, b) { return equityPath(r, a, b).wiped; }
+function tradesIn(a, b) {
+  let n = 0; const s = state.skip;
+  for (let j = 0; j < D.trades.d.length; j++) { const d = D.trades.d[j]; if (d >= a && d <= b && !(s && D.trades.s[j])) n++; }
+  return n;
+}
+function periodRange(p) {
+  const find = s => { const i = D.days.findIndex(d => d >= s); return i < 0 ? N - 1 : i; };
+  if (p === "test") return [find(D.meta.test_start), N - 1];
+  if (p === "covid") return [find("2020-01-01"), find("2021-01-01") - 1];
+  return [0, N - 1];
+}
+
+// ---------- charts ----------
+const charts = {};
+function chart(id) { if (!charts[id]) charts[id] = echarts.init(document.getElementById(id), null, { renderer: "canvas" }); return charts[id]; }
+function baseAxis() {
+  return { axisLine: { lineStyle: { color: css("--line-2") } }, axisLabel: { color: css("--muted"), fontFamily: "Inter, Segoe UI, sans-serif" },
+           splitLine: { lineStyle: { color: css("--line") } }, axisTick: { show: false } };
+}
+function eventAreas() {
+  return D.events.map(e => [{ xAxis: Date.parse(e.start + "T00:00:00Z"), name: e.name }, { xAxis: Date.parse(e.end + "T00:00:00Z") }]);
+}
+const tipBase = () => ({ backgroundColor: css("--surface"), borderColor: css("--line-2"), textStyle: { color: css("--ink"), fontSize: 12.5, fontFamily: "Inter, sans-serif" } });
+
+let R = {};          // daily returns per hedge for current settings
+function recompute() { for (const h of HEDGES) R[h] = dailyReturns(h, state.cost, state.skip); }
+
+function renderEquity(keepZoom) {
+  const c = chart("chart-equity");
+  const [a, b] = [0, N - 1];
+  const shown = state.compare ? HEDGES : [state.hedge];
+  const series = [];
+  for (const h of shown) {
+    const p = equityPath(R[h], a, b), main = h === state.hedge;
+    series.push({ name: NAME[h], type: "line", data: p.eq, showSymbol: false, xAxisIndex: 0, yAxisIndex: 0,
+      lineStyle: { width: main ? 2.4 : 1.4, color: css(COLOR_VAR[h]), opacity: main ? 1 : 0.75 }, itemStyle: { color: css(COLOR_VAR[h]) },
+      z: main ? 3 : 2, emphasis: { focus: "series" },
+      endLabel: { show: true, formatter: () => NAME[h].replace(" hedge", "") + (p.wiped !== null ? " · wiped out " + D.days[p.wiped].slice(0, 7) : ""), color: p.wiped !== null ? css("--bad-ink") : css("--ink-2"), fontSize: 11 },
+      markArea: main ? { silent: true, itemStyle: { color: css("--event") }, label: { show: false }, data: eventAreas() } : undefined });
+    if (main) series.push({ name: "Drawdown", type: "line", data: p.dd, showSymbol: false, xAxisIndex: 1, yAxisIndex: 1,
+      lineStyle: { width: 1.2, color: css(COLOR_VAR[h]) }, areaStyle: { color: css(COLOR_VAR[h]), opacity: 0.15 }, itemStyle: { color: css(COLOR_VAR[h]) } });
+  }
+  const ax = baseAxis();
+  c.setOption({
+    animationDuration: 600, textStyle: { fontFamily: "Inter, sans-serif" },
+    grid: [{ left: 78, right: 92, top: 18, height: "58%" }, { left: 78, right: 92, top: "73%", height: "15%" }],
+    tooltip: { ...tipBase(), trigger: "axis", axisPointer: { type: "line", lineStyle: { color: css("--muted") } },
+      formatter: ps => { if (!ps.length) return ""; let s = `<b>${new Date(ps[0].value[0]).toISOString().slice(0, 10)}</b>`;
+        for (const p of ps) s += `<br>${p.marker} ${p.seriesName}: ${p.seriesName === "Drawdown" ? fmtShort(p.value[1]) : fmtShort(p.value[1])}`; return s; } },
+    xAxis: [{ type: "time", gridIndex: 0, ...ax, axisLabel: { show: false }, splitLine: { show: false } },
+            { type: "time", gridIndex: 1, ...ax, splitLine: { show: false } }],
+    yAxis: [{ type: "value", gridIndex: 0, scale: true, ...ax, axisLabel: { ...ax.axisLabel, formatter: v => fmtShort(v) } },
+            { type: "value", gridIndex: 1, ...ax, splitNumber: 2, axisLabel: { ...ax.axisLabel, formatter: v => fmtShort(v) } }],
+    dataZoom: [{ type: "slider", xAxisIndex: [0, 1], bottom: 4, height: 18, borderColor: css("--line"), fillerColor: "rgba(57,135,229,0.12)",
+                 dataBackground: { lineStyle: { color: css("--line-2") }, areaStyle: { color: css("--surface-2") } },
+                 textStyle: { color: css("--muted") }, labelFormatter: v => new Date(v).toISOString().slice(0, 7),
+                 startValue: T[state.win[0]], endValue: T[state.win[1]] },
+               { type: "inside", xAxisIndex: [0, 1], zoomOnMouseWheel: false, moveOnMouseWheel: false }],
+    series
+  }, true);
+  // legend (HTML, direct identity + selection)
+  const lg = document.getElementById("legend-main");
+  lg.innerHTML = shown.map(h => `<span><span class="sw" style="background:var(${COLOR_VAR[h]});height:${h === state.hedge ? 4 : 3}px"></span>${NAME[h]}${h === "mv" ? " <span class='pill'>ours</span>" : ""}</span>`).join("");
+}
+
+function idxFromTime(v) { let lo = 0, hi = N - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (T[m] < v) lo = m + 1; else hi = m; } return lo; }
+
+function renderKPIs() {
+  const [a, b] = state.win, s = stats(R[state.hedge], a, b), C = state.capital;
+  const w = wipedAt(R[state.hedge], a, b);
+  if (w !== null) { s.total = -C; s.ddRs = Math.max(s.ddRs, -C); s.ddPct = Math.max(s.ddPct, -100); s.annPct = NaN; }
+  const k = document.getElementById("kpis");
+  const cls = v => v >= 0 ? "pos" : "neg";
+  const tiles = [
+    ["Profit over the period", `<span class="${cls(s.total)}">${signed(s.total, fmtShort)}</span>`, `${pct(100 * s.total / C)} of your capital in ${s.years.toFixed(1)} years`],
+    ["Return per year", w !== null ? `<span class="neg">wiped out</span>` : `<span class="${cls(s.annPct)}">${pct(s.annPct, 1)}</span>`, `on ${fmtShort(C)} with ${fmtShort(C * state.lev)} of options sold`],
+    ["Sharpe ratio", s.sharpe.toFixed(2), "return per unit of daily risk, per year"],
+    ["Worst drawdown", `<span class="neg">${fmtShort(s.ddRs)}</span>`, `${pct(s.ddPct, 1)} of capital, ${dateStr(s.ddStart)} to ${dateStr(s.ddEnd)}`],
+    ["Worst single day", `<span class="neg">${fmtShort(s.worstRs)}</span>`, "loss marked to market at the close"],
+    ["Profitable months", `${s.posMonths.toFixed(0)}%`, `${s.months.size} months in the window`],
+    ["Options sold", inr0.format(tradesIn(a, b)), `one a day${state.skip ? ", paused in stress" : ""}, about ${fmtShort(C * state.lev / 21)} each`],
+    ["Premium vs cost", `${COSTS[state.cost][0]} bp · ${COSTS[state.cost][1]}%`, "futures fee per trade · option half-spread"],
+  ];
+  k.innerHTML = tiles.map(([a1, b1, c1]) => `<div class="kpi"><div class="k">${a1}</div><div class="v">${b1}</div><div class="s">${c1}</div></div>`).join("");
+  const line = document.getElementById("result-line");
+  line.innerHTML = `${NAME[state.hedge]}, ${state.cost === "zero" ? "no" : state.cost} costs, ${dateStr(a)} to ${dateStr(b)}. Capital ${fmtINR(C)}; the desk keeps about ${fmtShort(C * state.lev)} of NIFTY calls open at any time.` + (w !== null ? ` <b class="neg">At this leverage the losses use up all your capital on ${dateStr(w)}: the account is wiped out.</b>` : "");
+  renderMonths(s.months);
+  renderWorst(a, b);
+  renderVs(a, b);
+  renderCost(a, b);
+}
+
+function renderMonths(months) {
+  const L = state.lev, C = state.capital, byYear = new Map();
+  for (const [k, v] of months) { const [y, m] = k.split("-"); if (!byYear.has(y)) byYear.set(y, new Array(12).fill(null)); byYear.get(y)[+m - 1] = v * L * C; }
+  let max = 0; for (const arr of byYear.values()) for (const v of arr) if (v !== null) max = Math.max(max, Math.abs(v));
+  const shade = v => { if (v === null) return ""; const a = Math.min(Math.abs(v) / (max || 1), 1) * 0.55 + 0.06; const col = v >= 0 ? css("--pos") : css("--neg");
+    return `background: color-mix(in srgb, ${col} ${Math.round(a * 100)}%, var(--surface));`; };
+  let h = `<thead><tr><th>Year</th>${monthName.map(m => `<th>${m}</th>`).join("")}<th>Total</th></tr></thead><tbody>`;
+  for (const [y, arr] of byYear) {
+    const tot = arr.reduce((s, v) => s + (v || 0), 0);
+    h += `<tr><td class="y">${y}</td>${arr.map(v => `<td style="${shade(v)}">${v === null ? "" : (v < 0 ? "−" : "") + fmtShort(Math.abs(v)).replace("₹", "")}</td>`).join("")}<td class="tot ${tot >= 0 ? "pos" : "neg"}">${signed(tot, fmtShort)}</td></tr>`;
+  }
+  document.getElementById("months").innerHTML = h + "</tbody>";
+}
+
+function renderWorst(a, b) {
+  // non-overlapping worst drawdowns of the selected desk
+  const r = R[state.hedge], L = state.lev, C = state.capital, eq = [];
+  let e = 0; for (let t = a; t <= b; t++) { e += r[t]; eq.push(e); }
+  const found = []; const used = new Uint8Array(eq.length);
+  for (let k = 0; k < 4; k++) {
+    let best = 0, bs = -1, be = -1, peak = -Infinity, pk = -1;
+    for (let t = 0; t < eq.length; t++) { if (used[t]) { peak = -Infinity; continue; } if (eq[t] > peak) { peak = eq[t]; pk = t; } if (eq[t] - peak < best) { best = eq[t] - peak; bs = pk; be = t; } }
+    if (bs < 0) break; for (let t = bs; t <= be; t++) used[t] = 1; found.push([best, bs + a, be + a]);
+  }
+  document.getElementById("worst").innerHTML = found.map(([v, s, f]) => {
+    const ev = D.events.find(x => D.days[f] >= x.start && D.days[s] <= x.end);
+    return `<div class="row" style="justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span>${D.days[s]} → ${D.days[f]}${ev ? ` <span class="pill">${ev.name}</span>` : ""}</span><b class="neg">${fmtShort(v * L * C)}</b></div>`;
+  }).join("") || "<p class='muted'>No losses in this window.</p>";
+}
+
+function renderVs(a, b) {
+  const C = state.capital, r = R[state.hedge], L = state.lev;
+  const desk = [], nif = []; let e = 0;
+  const n0 = D.nifty[a];
+  let nr = [], dr = [];
+  const capped = equityPath(r, a, b).eq;
+  for (let t = a; t <= b; t++) { desk.push(capped[t - a]); nif.push([T[t], C * D.nifty[t] / n0]);
+    if (t > a) { nr.push(Math.log(D.nifty[t] / D.nifty[t - 1])); dr.push(r[t] * L); } }
+  const c = chart("chart-vs"), ax = baseAxis();
+  c.setOption({ animationDuration: 500, grid: { left: 78, right: 70, top: 14, bottom: 30 },
+    tooltip: { ...tipBase(), trigger: "axis", formatter: ps => `<b>${new Date(ps[0].value[0]).toISOString().slice(0, 10)}</b>` + ps.map(p => `<br>${p.marker} ${p.seriesName}: ${fmtShort(p.value[1])}`).join("") },
+    xAxis: { type: "time", ...ax, splitLine: { show: false } }, yAxis: { type: "value", scale: true, ...ax, axisLabel: { ...ax.axisLabel, formatter: v => fmtShort(v) } },
+    series: [
+      { name: "Buy and hold NIFTY", type: "line", data: nif, showSymbol: false, lineStyle: { width: 1.4, color: css("--ref") }, itemStyle: { color: css("--ref") }, endLabel: { show: true, formatter: "NIFTY", color: css("--ink-2"), fontSize: 11 } },
+      { name: NAME[state.hedge], type: "line", data: desk, showSymbol: false, lineStyle: { width: 2.2, color: css(COLOR_VAR[state.hedge]) }, itemStyle: { color: css(COLOR_VAR[state.hedge]) }, endLabel: { show: true, formatter: "Desk", color: css("--ink-2"), fontSize: 11 } }
+    ] }, true);
+  // stats
+  const sd = arr => { const m = arr.reduce((s, x) => s + x, 0) / arr.length; return Math.sqrt(arr.reduce((s, x) => s + (x - m) ** 2, 0) / (arr.length - 1)); };
+  const mean = arr => arr.reduce((s, x) => s + x, 0) / arr.length;
+  const corr = (() => { const mx = mean(nr), my = mean(dr); let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < nr.length; i++) { sxy += (nr[i] - mx) * (dr[i] - my); sxx += (nr[i] - mx) ** 2; syy += (dr[i] - my) ** 2; } return sxy / Math.sqrt(sxx * syy); })();
+  const ddOf = path => { let pk = -Infinity, w = 0; for (const [, v] of path) { pk = Math.max(pk, v); w = Math.min(w, v / pk - 1); } return w * 100; };
+  const yrs = (b - a) / 252;
+  const nifCagr = (Math.pow(D.nifty[b] / n0, 1 / Math.max(yrs, 1e-9)) - 1) * 100;
+  const deskAnn = 252 * mean(dr) * 100;
+  const rows = [
+    ["", "Desk (" + NAME[state.hedge].replace(" hedge", "") + ")", "Buy NIFTY"],
+    ["Return per year", pct(deskAnn), pct(nifCagr)],
+    ["Daily ups and downs (vol. per year)", (sd(dr) * Math.sqrt(252) * 100).toFixed(1) + "%", (sd(nr) * Math.sqrt(252) * 100).toFixed(1) + "%"],
+    ["Worst fall from a peak", pct(ddOf(desk)), pct(ddOf(nif))],
+    ["Final value", fmtShort(desk[desk.length - 1][1]), fmtShort(nif[nif.length - 1][1])],
+  ];
+  document.getElementById("vs-table").innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">` +
+    rows.map((r1, i) => `<tr style="border-bottom:1px solid var(--line)">${r1.map((c1, j) => `<${i ? "td" : "th"} style="padding:8px 6px;text-align:${j ? "right" : "left"};${i ? "" : "color:var(--muted);font-size:12px"}">${c1}</${i ? "td" : "th"}>`).join("")}</tr>`).join("") +
+    `</table><p class="ink2" style="font-size:14px;margin-top:12px">Correlation of the desk's daily result with NIFTY's daily move: <b>${corr.toFixed(2)}</b>. Close to zero means the desk's income does not depend on which way the market goes; that is what the hedge buys.</p>`;
+}
+
+function renderCost(a, b) {
+  const xs = [0, 0.5, 1, 1.5, 2, 3, 4, 5];
+  const series = HEDGES.map(h => ({
+    name: NAME[h], type: "line", showSymbol: true, symbolSize: 7,
+    lineStyle: { width: h === state.hedge ? 2.4 : 1.4, color: css(COLOR_VAR[h]) }, itemStyle: { color: css(COLOR_VAR[h]), borderColor: css("--surface"), borderWidth: 2 },
+    endLabel: { show: true, formatter: NAME[h].replace(" hedge", ""), color: css("--ink-2"), fontSize: 11 },
+    data: xs.map(m => {
+      const fb = 1 * m, sp = 1 * m; let s = 0; let n = 0;
+      for (const grp of state.skip ? ["calm"] : ["calm", "stress"]) { const c = D.comp[h][grp]; for (let t = a; t <= b; t++) s += (c.gross[t] - (fb / 1e4) * c.fut[t] - (sp / 100) * c.opt[t]) / 1e4; }
+      n = b - a + 1; return [m, 252 * s / n * state.lev * 100];
+    })
+  }));
+  const c = chart("chart-cost"), ax = baseAxis();
+  c.setOption({ animationDuration: 400, grid: { left: 52, right: 88, top: 14, bottom: 34 },
+    tooltip: { ...tipBase(), trigger: "axis", formatter: ps => `<b>Costs ×${ps[0].value[0]} of low</b>` + ps.map(p => `<br>${p.marker} ${p.seriesName}: ${pct(p.value[1])}`).join("") },
+    xAxis: { type: "value", min: 0, max: 5, ...ax, name: "cost level (×low)", nameLocation: "middle", nameGap: 24, nameTextStyle: { color: css("--muted") }, axisLabel: { ...ax.axisLabel, formatter: v => v + "×" } },
+    yAxis: { type: "value", ...ax, axisLabel: { ...ax.axisLabel, formatter: v => v + "%" } },
+    series: [...series, { type: "line", data: [[0, 0], [5, 0]], silent: true, showSymbol: false, lineStyle: { color: css("--line-2"), width: 1 }, tooltip: { show: false } }] }, true);
+}
+
+// ---------- replay ----------
+let playing = null;
+function replay() {
+  const btn = document.getElementById("play");
+  if (playing) { clearTimeout(playing); playing = null; btn.textContent = "▶ Replay the years"; renderEquity(true); return; }
+  const [a, b] = state.win, C = state.capital;
+  const c = chart("chart-equity");
+  const names = c.getOption().series.map(s => s.name);          // read once: getOption copies all data
+  const hedgeOf = nm => HEDGES.find(h => NAME[h] === nm);
+  const full = {}; for (const nm of names) { const h = hedgeOf(nm); if (h) full[h] = equityPath(R[h], a, b); }
+  const main = full[state.hedge];
+  let lo = Infinity, hi = -Infinity;
+  for (const h in full) for (const [, v] of full[h].eq) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  let ddLo = 0; for (const [, v] of main.dd) ddLo = Math.min(ddLo, v);
+  const pad = (hi - lo) * 0.05 || 1;
+  // fix both axes to the whole window so the lines grow across a still chart
+  c.setOption({ xAxis: [{ min: T[a], max: T[b] }, { min: T[a], max: T[b] }],
+                yAxis: [{ min: lo - pad, max: hi + pad, scale: false }, { min: ddLo * 1.05 - 1, max: 0 }] });
+  const ticker = document.getElementById("ticker"), toast = document.getElementById("toast");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const total = main.eq.length, dur = reduce ? 1 : 12000;
+  let t0 = null; const shownEv = new Set();
+  btn.textContent = "■ Stop";
+  const step = ts => {
+    if (t0 === null) t0 = ts;
+    const k = Math.max(1, Math.min(total, Math.floor(total * (ts - t0) / dur)));
+    c.setOption({ series: names.map(nm => nm === "Drawdown" ? { data: main.dd.slice(0, k) }
+                                          : hedgeOf(nm) ? { data: full[hedgeOf(nm)].eq.slice(0, k) } : {}) });
+    const v = main.eq[k - 1][1], day = D.days[a + k - 1];
+    ticker.innerHTML = `${day.slice(0, 7)} · <span class="${v >= C ? "pos" : "neg"}">${fmtShort(v)}</span>`;
+    const ev = D.events.find(x => day >= x.start && day <= x.end);
+    if (ev && !shownEv.has(ev.name)) {
+      shownEv.add(ev.name); toast.hidden = false;
+      toast.innerHTML = `<b>${ev.name}</b>: NIFTY fell up to ${Math.abs(ev.nifty_dd).toFixed(0)}% from its peak in this window. Watch how the hedged desk holds up.`;
+    }
+    if (k < total) playing = setTimeout(() => step(performance.now()), 16);
+    else { playing = null; btn.textContent = "▶ Replay the years"; setTimeout(() => { toast.hidden = true; renderEquity(true); }, 3000); }
+  };
+  playing = setTimeout(() => step(performance.now()), 0);
+}
+
+// ---------- one trade ----------
+const TR = D.trades, P = D.paths, NT = TR.d.length;
+const OFF = new Int32Array(NT); { let o = 0; for (let j = 0; j < NT; j++) { OFF[j] = o; o += TR.n[j] + 1; } }
+let curTrade = 0;
+function tradeOnOrAfter(dateS) { for (let j = 0; j < NT; j++) if (D.days[TR.d[j]] >= dateS) return j; return NT - 1; }
+function presetTrade(q) {
+  if (q === "covid") return tradeOnOrAfter("2020-02-24");
+  if (q === "calm") return tradeOnOrAfter("2019-07-01");
+  if (q === "rally") { let best = 0, bv = -1; for (let j = 0; j < NT; j++) { const g = P.F[OFF[j] + TR.n[j]] / P.F[OFF[j]]; if (g > bv) { bv = g; best = j; } } return best; }
+  return Math.floor(Math.random() * NT);
+}
+function renderTrade(j) {
+  curTrade = j;
+  const n = TR.n[j], o = OFF[j], d0 = TR.d[j], K = TR.K[j], F0 = TR.F0[j], c0 = TR.c0[j];
+  const units = state.capital * state.lev / 21 / F0;
+  const [fbp, spr] = COSTS[state.cost];
+  const days = [], F = [], V = [], bs = [], mv = [];
+  for (let k = 0; k <= n; k++) { days.push(T[d0 + k]); F.push(P.F[o + k]); V.push(P.V[o + k]); bs.push(P.bs[o + k]); mv.push(P.mv[o + k]); }
+  const cum = phi => { const out = [[days[0], -spr / 100 * c0 * units - (phi ? fbp / 1e4 * Math.abs(phi[0]) * F[0] * units : 0)]]; let s = out[0][1];
+    for (let k = 1; k <= n; k++) { const ph = phi ? phi[k - 1] : 0; s += (-(V[k] - V[k - 1]) + ph * (F[k] - F[k - 1])) * units;
+      if (phi && k < n) s -= fbp / 1e4 * Math.abs(phi[k] - phi[k - 1]) * F[k] * units; out.push([days[k], s]); } return out; };
+  const pnl = { mv: cum(mv), bs: cum(bs), none: cum(null) };
+  document.getElementById("tdate").value = D.days[d0];
+  const exp = TR.exp[j], payoff = V[n];
+  const hedgeGain = phi => { let s = 0; for (let k = 1; k <= n; k++) s += phi[k - 1] * (F[k] - F[k - 1]); return s * units; };
+  const tk = document.getElementById("ticket");
+  const fmtP = v => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const ev = D.events.find(e => D.days[d0] >= e.start && D.days[d0] <= e.end);
+  tk.innerHTML = `<div class="t">Contract note · ${D.days[d0]}${ev ? " · " + ev.name : ""}</div>
+    <div class="line"><span class="sell">SELL</span><span>NIFTY ${exp} ${inr0.format(K)} CE</span></div>
+    <div class="line"><span>Premium</span><span>${fmtP(c0)} pts</span></div>
+    <div class="line"><span>NIFTY future</span><span>${fmtP(F0)}</span></div>
+    <div class="line"><span>Units (your sizing)</span><span>${units.toFixed(1)}</span></div>
+    <hr><div class="line"><span class="buy">BUY fut · Heston MV</span><span>${(mv[0] * units).toFixed(1)} u · φ ${mv[0].toFixed(3)}</span></div>
+    <div class="line"><span class="buy">BUY fut · Black–Scholes</span><span>${(bs[0] * units).toFixed(1)} u · φ ${bs[0].toFixed(3)}</span></div>
+    <hr><div class="line"><span>Heston delta ∂C/∂F</span><span>${TR.dh[j] === null ? "–" : TR.dh[j].toFixed(3)}</span></div>
+    <div class="line"><span>Correction (ρξ/F)·∂C/∂v</span><span>${TR.dh[j] === null ? "–" : (mv[0] - TR.dh[j]).toFixed(3)}</span></div>
+    <div class="line"><span>ρ, ξ fitted that day</span><span>${TR.rho[j] === null ? "–" : TR.rho[j].toFixed(2)}, ${TR.xi[j] === null ? "–" : TR.xi[j].toFixed(2)}</span></div>
+    <hr><div class="line"><span>Settles at</span><span>${fmtP(F[n])}</span></div>
+    <div class="line"><span>Payoff to buyer</span><span>${fmtP(payoff)} pts</span></div>`;
+  const c = chart("chart-trade"), ax = baseAxis();
+  c.setOption({ animationDuration: 500, textStyle: { fontFamily: "Inter, sans-serif" },
+    grid: [{ left: 70, right: 96, top: 14, height: "36%" }, { left: 70, right: 96, top: "57%", height: "33%" }],
+    tooltip: { ...tipBase(), trigger: "axis", formatter: ps => `<b>${new Date(ps[0].value[0]).toISOString().slice(0, 10)}</b>` + ps.map(p => `<br>${p.marker} ${p.seriesName}: ${p.seriesName.startsWith("P&L") ? fmtShort(p.value[1]) : p.value[1].toLocaleString("en-IN", { maximumFractionDigits: 1 })}`).join("") },
+    xAxis: [{ type: "time", gridIndex: 0, ...ax, axisLabel: { show: false }, splitLine: { show: false } }, { type: "time", gridIndex: 1, ...ax, splitLine: { show: false } }],
+    yAxis: [{ type: "value", gridIndex: 0, scale: true, ...ax, name: "index points", nameTextStyle: { color: css("--muted"), fontSize: 11 } },
+            { type: "value", gridIndex: 1, scale: true, ...ax, name: "P&L (₹)", nameTextStyle: { color: css("--muted"), fontSize: 11 }, axisLabel: { ...ax.axisLabel, formatter: v => fmtShort(v) } }],
+    series: [
+      { name: "NIFTY future", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: days.map((d, k) => [d, F[k]]), showSymbol: false, lineStyle: { color: css("--ink-2"), width: 1.8 }, itemStyle: { color: css("--ink-2") }, endLabel: { show: true, formatter: "Future", color: css("--ink-2"), fontSize: 11 },
+        markLine: { silent: true, symbol: "none", lineStyle: { color: css("--neg"), type: "solid", width: 1 }, label: { formatter: "Strike " + inr0.format(K), color: css("--ink-2"), fontSize: 11 }, data: [{ yAxis: K }] } },
+      ...HEDGES.map(h => ({ name: "P&L " + NAME[h].replace(" hedge", ""), type: "line", xAxisIndex: 1, yAxisIndex: 1, data: pnl[h], showSymbol: false,
+        lineStyle: { width: h === state.hedge ? 2.4 : 1.4, color: css(COLOR_VAR[h]) }, itemStyle: { color: css(COLOR_VAR[h]) },
+        endLabel: { show: true, formatter: NAME[h].replace(" hedge", ""), color: css("--ink-2"), fontSize: 11 } })),
+      { type: "line", xAxisIndex: 1, yAxisIndex: 1, data: [[days[0], 0], [days[n], 0]], silent: true, showSymbol: false, lineStyle: { color: css("--line-2"), width: 1 }, tooltip: { show: false } }
+    ] }, true);
+  // breakdown
+  const prem = c0 * units, pay = payoff * units;
+  const rows = HEDGES.map(h => { const g = h === "none" ? 0 : hedgeGain(h === "mv" ? mv : bs); const net = pnl[h][n][1];
+    return `<tr><td style="padding:7px 6px"><span class="sw" style="background:var(${COLOR_VAR[h]})"></span>${NAME[h]}</td><td>${fmtINR(prem)}</td><td class="neg">${signed(-pay, fmtINR)}</td><td class="${g >= 0 ? "pos" : "neg"}">${signed(g, fmtINR)}</td><td class="neg">${signed(net - prem + pay - g, fmtINR)}</td><td class="${net >= 0 ? "pos" : "neg"}"><b>${signed(net, fmtINR)}</b></td></tr>`; }).join("");
+  document.getElementById("breakdown").innerHTML = `<h3>Where the money came from</h3><div class="tbl-wrap"><table style="width:100%;min-width:620px;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;margin-top:8px">
+    <thead><tr style="color:var(--muted);font-size:12px;text-align:right"><th style="text-align:left;padding:6px">Hedge</th><th>Premium received</th><th>Paid at expiry</th><th>Futures hedge</th><th>Costs</th><th>Net result</th></tr></thead>
+    <tbody style="text-align:right">${rows}</tbody></table></div>
+    <p class="ink2" style="font-size:14px;margin-top:10px">${payoff > 0 ? "NIFTY finished above the strike, so the desk paid the buyer; the long futures hedge earned back most of that payment." : "NIFTY finished below the strike, so the call expired worthless; the futures hedge lost money as NIFTY fell, giving back part of the premium."} Units are scaled to your settings: ${fmtShort(state.capital * state.lev / 21)} of NIFTY sold that day.</p>`;
+}
+
+// ---------- why it works ----------
+function renderVRP() {
+  const c = chart("chart-vrp"), ax = baseAxis();
+  const vix = [], rv = []; let gap = 0, cnt = 0, above = 0;
+  for (let t = 0; t < N; t++) { if (D.vix[t] !== null) vix.push([T[t], D.vix[t]]); if (D.rv[t] !== null) { rv.push([T[t], D.rv[t]]); if (D.vix[t] !== null) { gap += D.vix[t] - D.rv[t]; cnt++; if (D.rv[t] > D.vix[t]) above++; } } }
+  c.setOption({ animationDuration: 500, grid: { left: 52, right: 104, top: 14, bottom: 52 },
+    tooltip: { ...tipBase(), trigger: "axis", formatter: ps => `<b>${new Date(ps[0].value[0]).toISOString().slice(0, 10)}</b>` + ps.map(p => `<br>${p.marker} ${p.seriesName}: ${p.value[1].toFixed(1)}%`).join("") },
+    xAxis: { type: "time", ...ax, splitLine: { show: false } }, yAxis: { type: "value", ...ax, axisLabel: { ...ax.axisLabel, formatter: v => v + "%" } },
+    dataZoom: [{ type: "inside", zoomOnMouseWheel: false, moveOnMouseWheel: false }, { type: "slider", bottom: 4, height: 16, borderColor: css("--line"), textStyle: { color: css("--muted") }, labelFormatter: v => new Date(v).toISOString().slice(0, 7) }],
+    series: [
+      { name: "India VIX (price of insurance)", type: "line", data: vix, showSymbol: false, lineStyle: { width: 1.6, color: css("--s1") }, itemStyle: { color: css("--s1") }, endLabel: { show: true, formatter: "India VIX", color: css("--ink-2"), fontSize: 11 } },
+      { name: "Realised over next month", type: "line", data: rv, showSymbol: false, lineStyle: { width: 1.1, color: css("--s2") }, itemStyle: { color: css("--s2") }, endLabel: { show: true, formatter: "Realised", color: css("--ink-2"), fontSize: 11 } }
+    ] }, true);
+  document.getElementById("vrp-stats").innerHTML = `<span class="pill">VIX above realised by ${(gap / cnt).toFixed(1)} vol points on average</span><span class="pill">realised beat VIX on ${(100 * above / cnt).toFixed(0)}% of days (the claims)</span><span class="muted" style="font-size:12.5px">VIX also prices the downside skew, so part of the gap is not profit.</span>`;
+}
+
+// ---------- latest ticket ----------
+function renderLatest() {
+  const L = D.latest, units = state.capital * state.lev / 21 / L.F;
+  document.getElementById("ticket-intro").textContent = `On ${L.date}, the last day in our data, this is what the desk would do for your settings (${fmtShort(state.capital * state.lev / 21)} of NIFTY that day).`;
+  const fmtP = v => v.toLocaleString("en-IN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  document.getElementById("latest").innerHTML = `<div class="t">Order ticket · ${L.date} close</div>
+    <div class="line"><span class="sell">SELL</span><span>NIFTY ${L.expiry} ${inr0.format(L.strike)} CE</span></div>
+    <div class="line"><span>Days to expiry</span><span>${L.tau_days} trading days</span></div>
+    <div class="line"><span>Premium${L.traded_as === "PE" ? " (from the put, by parity)" : ""}</span><span>${fmtP(L.premium)} pts</span></div>
+    <div class="line"><span>Implied volatility</span><span>${L.iv.toFixed(1)}%</span></div>
+    <div class="line"><span>NIFTY future</span><span>${fmtP(L.F)}</span></div>
+    <div class="line"><span>Units</span><span>${units.toFixed(1)}</span></div>
+    <div class="line"><span>Premium collected</span><span>${fmtINR(L.premium * units)}</span></div>
+    <hr><div class="line"><span class="buy">BUY futures (Heston MV)</span><span>${(L.mv_delta * units).toFixed(1)} units</span></div>
+    <div class="line"><span class="muted">(Black–Scholes would buy</span><span class="muted">${(L.bs_delta * units).toFixed(1)} units)</span></div>
+    <hr><div class="line"><span>Then</span><span>re-hedge at every close until expiry</span></div>`;
+  document.getElementById("latest-maths").innerHTML = `On ${L.params_date} the fitted model gave ρ = ${L.rho.toFixed(2)} and ξ = ${L.xi.toFixed(2)} (current volatility ${L.vol0.toFixed(1)}%). For this call the plain delta is ${L.heston_delta.toFixed(3)} and the correction is ${(L.mv_delta - L.heston_delta).toFixed(3)}, so the desk holds ${L.mv_delta.toFixed(3)} futures per call.`;
+}
+
+// ---------- wiring ----------
+function facts() {
+  const m = D.meta;
+  document.getElementById("facts").innerHTML = `<span><b>${inr0.format(m.n_days_calibrated)}</b> trading days fitted</span><span><b>${inr0.format(m.n_quotes)}</b> option quotes</span><span><b>${inr0.format(m.n_trades)}</b> calls sold and hedged</span><span>${m.first} to ${m.last}</span>`;
+}
+function setPressed(groupId, v) { for (const b of document.querySelectorAll(`#${groupId} button`)) b.setAttribute("aria-pressed", String(b.dataset.v === v)); }
+function all(keepZoom) { recompute(); renderEquity(keepZoom); renderKPIs(); renderTrade(curTrade); renderLatest(); }
+function parseCap(s) { const v = Number(String(s).replace(/[^0-9.]/g, "")); return isFinite(v) && v > 0 ? v : null; }
+
+document.getElementById("capital").addEventListener("change", e => { const v = parseCap(e.target.value); if (v) { state.capital = v; e.target.value = inr0.format(v); setPressed("cap-presets", String(v)); all(true); } else e.target.value = inr0.format(state.capital); });
+for (const b of document.querySelectorAll("#cap-presets button")) b.addEventListener("click", () => { state.capital = +b.dataset.v; document.getElementById("capital").value = inr0.format(state.capital); setPressed("cap-presets", b.dataset.v); all(true); });
+document.getElementById("lev").addEventListener("input", e => { state.lev = +e.target.value; document.getElementById("lev-v").textContent = state.lev.toFixed(1) + "×"; all(true); });
+for (const b of document.querySelectorAll("#hedge button")) b.addEventListener("click", () => { state.hedge = b.dataset.v; setPressed("hedge", state.hedge); all(true); });
+for (const b of document.querySelectorAll("#costs button")) b.addEventListener("click", () => { state.cost = b.dataset.v; setPressed("costs", state.cost); all(true); });
+for (const b of document.querySelectorAll("#period button")) b.addEventListener("click", () => { state.period = b.dataset.v; state.win = periodRange(state.period); setPressed("period", state.period); all(true); });
+document.getElementById("skip").addEventListener("change", e => { state.skip = e.target.checked; all(true); });
+document.getElementById("compare").addEventListener("change", e => { state.compare = e.target.checked; renderEquity(true); });
+document.getElementById("play").addEventListener("click", replay);
+document.getElementById("tdate").addEventListener("change", e => { if (e.target.value) renderTrade(tradeOnOrAfter(e.target.value)); });
+for (const b of document.querySelectorAll("#tpresets button")) b.addEventListener("click", () => renderTrade(presetTrade(b.dataset.q)));
+document.getElementById("tdate").min = D.days[TR.d[0]]; document.getElementById("tdate").max = D.days[TR.d[NT - 1]];
+
+let zoomTimer = null;
+function onZoom() {
+  const o = (chart("chart-equity").getOption().dataZoom || [])[0];
+  if (!o) return;
+  const span = T[N - 1] - T[0];
+  const sv = o.startValue ?? (T[0] + span * (o.start ?? 0) / 100), ev = o.endValue ?? (T[0] + span * (o.end ?? 100) / 100);
+  const a = idxFromTime(sv), b = Math.max(a + 5, idxFromTime(ev));
+  state.win = [a, Math.min(b, N - 1)];
+  clearTimeout(zoomTimer); zoomTimer = setTimeout(() => { setPressed("period", ""); renderKPIs(); }, 120);
+}
+
+function boot() {
+  facts();
+  recompute();
+  renderEquity(false);
+  chart("chart-equity").on("datazoom", onZoom);
+  renderKPIs();
+  renderTrade(presetTrade("calm"));
+  renderVRP();
+  renderLatest();
+}
+boot();
+// theme changes: redraw charts with the new tokens
+const redraw = () => { for (const c of Object.values(charts)) c.dispose(); for (const k of Object.keys(charts)) delete charts[k];
+  renderEquity(false); chart("chart-equity").on("datazoom", onZoom); renderKPIs(); renderTrade(curTrade); renderVRP(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+addEventListener("resize", () => { for (const c of Object.values(charts)) c.resize(); });
+})();
+</script>

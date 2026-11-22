@@ -1,0 +1,19 @@
+\begin{tabular}{lllrrrrrr}
+\toprule
+Costs & Hedge & Entry rule & Return/yr & Vol/yr & Sharpe & Max DD & Worst day & Sharpe (train) \\
+\midrule
+Low & Unhedged & every day & $-$1.79 & 8.33 & $-$0.21 & $-$36.0 & $-$4.39 & $-$0.13 \\
+ & Unhedged & skip stress & +2.04 & 5.33 & 0.38 & $-$11.9 & $-$3.31 & $-$0.37 \\
+ & BS hedge & every day & +1.41 & 1.91 & 0.74 & $-$5.6 & $-$2.18 & 0.45 \\
+ & BS hedge & skip stress & +0.78 & 1.28 & 0.61 & $-$3.0 & $-$2.18 & 0.11 \\
+ & Heston MV hedge & every day & +1.20 & 1.93 & 0.62 & $-$4.1 & $-$2.47 & 0.33 \\
+ & Heston MV hedge & skip stress & +0.88 & 1.37 & 0.64 & $-$3.0 & $-$2.47 & 0.04 \\
+\midrule
+High & Unhedged & every day & $-$2.21 & 8.33 & $-$0.27 & $-$37.1 & $-$4.39 & $-$0.18 \\
+ & Unhedged & skip stress & +1.79 & 5.33 & 0.34 & $-$12.2 & $-$3.31 & $-$0.41 \\
+ & BS hedge & every day & +0.17 & 1.93 & 0.09 & $-$6.6 & $-$2.21 & $-$0.32 \\
+ & BS hedge & skip stress & $-$0.07 & 1.30 & $-$0.06 & $-$4.1 & $-$2.21 & $-$0.61 \\
+ & Heston MV hedge & every day & $-$0.03 & 1.95 & $-$0.02 & $-$4.9 & $-$2.51 & $-$0.42 \\
+ & Heston MV hedge & skip stress & +0.04 & 1.39 & 0.03 & $-$3.6 & $-$2.51 & $-$0.66 \\
+\bottomrule
+\end{tabular}

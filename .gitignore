@@ -1,0 +1,19 @@
+# local / regenerable
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+_zip_stage/
+*.zip
+!team_code/MACF244_heston_rough_all_code.zip
+results/chunks/
+# raw NSE bhavcopy daily files (504 MB): MANIFEST.jsonl is committed
+data/raw/bhavcopy/nifty/
+# local member list with student IDs
+report/members.tex
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
